@@ -137,7 +137,7 @@
         <!-- Previous conversations -->
         <AccordionItem value="previous_conversations" class="accordion-item">
           <AccordionTrigger class="accordion-trigger">
-            {{ $t('conversation.sidebar.previousConvo') }}
+            {{ $t('globals.terms.conversation', 2) }}
           </AccordionTrigger>
           <AccordionContent class="accordion-content">
             <PreviousConversations />
