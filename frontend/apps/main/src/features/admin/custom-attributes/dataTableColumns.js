@@ -6,10 +6,10 @@ export const createColumns = (t, { onEdit } = {}) => [
     {
         accessorKey: 'name',
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.name'))
+            return h('div', { class: 'text-left' }, t('globals.terms.name'))
         },
         cell: function ({ row }) {
-            return h('div', { class: 'text-center' },
+            return h('div', { class: 'text-left' },
                 onEdit
                   ? h('span', {
                       class: 'text-foreground font-medium hover:underline cursor-pointer',
@@ -22,40 +22,40 @@ export const createColumns = (t, { onEdit } = {}) => [
     {
         accessorKey: 'key',
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.key'))
+            return h('div', { class: 'text-left' }, t('globals.terms.key'))
         },
         cell: function ({ row }) {
-            return h('div', { class: 'text-center' }, row.getValue('key'))
+            return h('div', { class: 'text-left' }, row.getValue('key'))
         }
     },
     {
         accessorKey: 'data_type',
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.type'))
+            return h('div', { class: 'text-left' }, t('globals.terms.type'))
         },
         cell: function ({ row }) {
-            return h('div', { class: 'text-center' }, row.getValue('data_type'))
+            return h('div', { class: 'text-left' }, row.getValue('data_type'))
         }
     },
     {
         accessorKey: 'applies_to',
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.appliesTo'))
+            return h('div', { class: 'text-left' }, t('globals.terms.appliesTo'))
         },
         cell: function ({ row }) {
-            return h('div', { class: 'text-center' }, row.getValue('applies_to'))
+            return h('div', { class: 'text-left' }, row.getValue('applies_to'))
         }
     },
     {
         accessorKey: 'created_at',
         enableGlobalFilter: false,
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
+            return h('div', { class: 'text-left' }, t('globals.terms.createdAt'))
         },
         cell: function ({ row }) {
             return h(
                 'div',
-                { class: 'text-center' },
+                { class: 'text-left' },
                 format(row.getValue('created_at'), 'PPpp')
             )
         }
@@ -64,12 +64,12 @@ export const createColumns = (t, { onEdit } = {}) => [
         accessorKey: 'updated_at',
         enableGlobalFilter: false,
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.updatedAt'))
+            return h('div', { class: 'text-left' }, t('globals.terms.updatedAt'))
         },
         cell: function ({ row }) {
             return h(
                 'div',
-                { class: 'text-center' },
+                { class: 'text-left' },
                 format(row.getValue('updated_at'), 'PPpp')
             )
         }

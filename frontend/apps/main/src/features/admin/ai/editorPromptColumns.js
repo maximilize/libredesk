@@ -5,11 +5,11 @@ import dropdown from './editorPromptDropdown.vue'
 export const createEditorPromptColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'title',
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.title')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.title')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         onEdit
           ? h(
               'span',
@@ -25,9 +25,9 @@ export const createEditorPromptColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'updated_at',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.updatedAt')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.updatedAt')),
     cell: ({ row }) =>
-      h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+      h('div', { class: 'text-left' }, format(row.getValue('updated_at'), 'PPpp'))
   },
   {
     id: 'actions',

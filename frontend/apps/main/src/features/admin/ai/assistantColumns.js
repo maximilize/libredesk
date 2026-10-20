@@ -6,11 +6,11 @@ import dropdown from './assistantDropdown.vue'
 export const createAssistantColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'name',
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.name')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.name')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         onEdit
           ? h(
               'span',
@@ -25,22 +25,22 @@ export const createAssistantColumns = (t, { onEdit } = {}) => [
   },
   {
     accessorKey: 'description',
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.description')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.description')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center text-muted-foreground max-w-sm truncate mx-auto' },
+        { class: 'text-left text-muted-foreground max-w-sm truncate mx-auto' },
         row.getValue('description')
       )
   },
   {
     accessorKey: 'enabled',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.status')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.status')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         h(Badge, { variant: row.getValue('enabled') ? 'success' : 'secondary' }, () =>
           row.getValue('enabled') ? t('globals.terms.enabled') : t('globals.terms.disabled')
         )
@@ -49,9 +49,9 @@ export const createAssistantColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'updated_at',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.updatedAt')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.updatedAt')),
     cell: ({ row }) =>
-      h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+      h('div', { class: 'text-left' }, format(row.getValue('updated_at'), 'PPpp'))
   },
   {
     id: 'actions',

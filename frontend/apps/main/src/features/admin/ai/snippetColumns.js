@@ -6,7 +6,7 @@ import dropdown from './snippetDropdown.vue'
 export const createSnippetColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'title',
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.title')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.title')),
     cell: ({ row }) => {
       const title = onEdit
         ? h(
@@ -35,17 +35,17 @@ export const createSnippetColumns = (t, { onEdit } = {}) => [
           )
         )
       }
-      return h('div', { class: 'text-center' }, children)
+      return h('div', { class: 'text-left' }, children)
     }
   },
   {
     accessorKey: 'enabled',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.status')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.status')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         h(Badge, { variant: row.getValue('enabled') ? 'success' : 'secondary' }, () =>
           row.getValue('enabled') ? t('globals.terms.enabled') : t('globals.terms.disabled')
         )
@@ -54,9 +54,9 @@ export const createSnippetColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'updated_at',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.updatedAt')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.updatedAt')),
     cell: ({ row }) =>
-      h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+      h('div', { class: 'text-left' }, format(row.getValue('updated_at'), 'PPpp'))
   },
   {
     id: 'actions',

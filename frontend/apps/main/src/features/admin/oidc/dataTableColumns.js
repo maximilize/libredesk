@@ -8,10 +8,10 @@ export const createColumns = (t) => [
   {
     accessorKey: 'name',
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.name'))
+      return h('div', { class: 'text-left' }, t('globals.terms.name'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' },
+      return h('div', { class: 'text-left' },
         h(RouterLink,
           {
             to: { name: 'edit-sso', params: { id: row.original.id } },
@@ -25,21 +25,21 @@ export const createColumns = (t) => [
   {
     accessorKey: 'provider',
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.provider'))
+      return h('div', { class: 'text-left' }, t('globals.terms.provider'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, row.getValue('provider'))
+      return h('div', { class: 'text-left' }, row.getValue('provider'))
     }
   },
   {
     accessorKey: 'enabled',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.status')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.status')),
     cell: ({ row }) => {
       const enabled = row.getValue('enabled')
       return h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         h(Badge, { variant: enabled ? 'success' : 'secondary' }, () =>
           enabled ? t('globals.terms.enabled') : t('globals.terms.disabled')
         )
@@ -50,20 +50,20 @@ export const createColumns = (t) => [
     accessorKey: 'created_at',
     enableGlobalFilter: false,
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
+      return h('div', { class: 'text-left' }, t('globals.terms.createdAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, format(row.getValue('created_at'), 'PPpp'))
+      return h('div', { class: 'text-left' }, format(row.getValue('created_at'), 'PPpp'))
     }
   },
   {
     accessorKey: 'updated_at',
     enableGlobalFilter: false,
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.updatedAt'))
+      return h('div', { class: 'text-left' }, t('globals.terms.updatedAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+      return h('div', { class: 'text-left' }, format(row.getValue('updated_at'), 'PPpp'))
     }
   },
   {

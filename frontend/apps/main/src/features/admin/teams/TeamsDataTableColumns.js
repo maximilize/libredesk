@@ -10,11 +10,11 @@ export const columns = [
   {
     accessorKey: 'name',
     header: function () {
-      return h('div', { class: 'text-center' }, t()('globals.terms.name', 1))
+      return h('div', { class: 'text-left' }, t()('globals.terms.name', 1))
     },
     cell: function ({ row }) {
       const emoji = row.original.emoji
-      return h('div', { class: 'text-center' },
+      return h('div', { class: 'text-left' },
         h(RouterLink,
           {
             to: { name: 'edit-team', params: { id: row.original.id } },
@@ -28,12 +28,12 @@ export const columns = [
   {
     accessorKey: 'created_at',
     header: function () {
-      return h('div', { class: 'text-center' }, t()('globals.terms.createdAt'))
+      return h('div', { class: 'text-left' }, t()('globals.terms.createdAt'))
     },
     cell: function ({ row }) {
       return h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         format(row.getValue('created_at'), 'PPpp')
       )
     }
@@ -41,12 +41,12 @@ export const columns = [
   {
     accessorKey: 'updated_at',
     header: function () {
-      return h('div', { class: 'text-center' }, t()('globals.terms.updatedAt'))
+      return h('div', { class: 'text-left' }, t()('globals.terms.updatedAt'))
     },
     cell: function ({ row }) {
       return h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         format(row.getValue('updated_at'), 'PPpp')
       )
     }

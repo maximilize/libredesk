@@ -14,13 +14,13 @@ export const createColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'name',
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.name'))
+      return h('div', { class: 'text-left' }, t('globals.terms.name'))
     },
     cell: function ({ row }) {
       const name = row.getValue('name')
       const isDefault = CONVERSATION_DEFAULT_STATUSES_LIST.includes(name)
       const label = isDefault ? t(DEFAULT_STATUS_KEY[name]) : name
-      return h('div', { class: 'text-center' },
+      return h('div', { class: 'text-left' },
         onEdit && !isDefault
           ? h('span', {
               class: 'text-foreground font-medium hover:underline cursor-pointer',
@@ -33,20 +33,20 @@ export const createColumns = (t, { onEdit } = {}) => [
   {
     accessorKey: 'category',
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.category'))
+      return h('div', { class: 'text-left' }, t('globals.terms.category'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, t(`globals.terms.${row.getValue('category')}`))
+      return h('div', { class: 'text-left' }, t(`globals.terms.${row.getValue('category')}`))
     }
   },
   {
     accessorKey: 'created_at',
     enableGlobalFilter: false,
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
+      return h('div', { class: 'text-left' }, t('globals.terms.createdAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' }, format(row.getValue('created_at'), 'PPpp'))
+      return h('div', { class: 'text-left' }, format(row.getValue('created_at'), 'PPpp'))
     }
   },
   {

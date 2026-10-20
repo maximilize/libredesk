@@ -7,10 +7,10 @@ export const createColumns = (t) => [
     {
         accessorKey: 'name',
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.name'))
+            return h('div', { class: 'text-left' }, t('globals.terms.name'))
         },
         cell: function ({ row }) {
-            return h('div', { class: 'text-center' },
+            return h('div', { class: 'text-left' },
                 h(RouterLink,
                     {
                         to: { name: 'edit-sla', params: { id: row.original.id } },
@@ -25,20 +25,20 @@ export const createColumns = (t) => [
         accessorKey: 'created_at',
         enableGlobalFilter: false,
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
+            return h('div', { class: 'text-left' }, t('globals.terms.createdAt'))
         },
         cell: function ({ row }) {
-            return h('div', { class: 'text-center' }, format(row.getValue('created_at'), 'PPpp'))
+            return h('div', { class: 'text-left' }, format(row.getValue('created_at'), 'PPpp'))
         }
     },
     {
         accessorKey: 'updated_at',
         enableGlobalFilter: false,
         header: function () {
-            return h('div', { class: 'text-center' }, t('globals.terms.updatedAt'))
+            return h('div', { class: 'text-left' }, t('globals.terms.updatedAt'))
         },
         cell: function ({ row }) {
-            return h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+            return h('div', { class: 'text-left' }, format(row.getValue('updated_at'), 'PPpp'))
         }
     },
     {

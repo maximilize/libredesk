@@ -8,10 +8,10 @@ export const createColumns = (t) => [
   {
     accessorKey: 'name',
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.name'))
+      return h('div', { class: 'text-left' }, t('globals.terms.name'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center' },
+      return h('div', { class: 'text-left' },
         h(RouterLink,
           {
             to: { name: 'edit-webhook', params: { id: row.original.id } },
@@ -25,22 +25,22 @@ export const createColumns = (t) => [
   {
     accessorKey: 'url',
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.url'))
+      return h('div', { class: 'text-left' }, t('globals.terms.url'))
     },
     cell: function ({ row }) {
       const url = row.getValue('url')
-      return h('div', { class: 'text-center font-mono mt-1 max-w-sm truncate' }, url)
+      return h('div', { class: 'text-left font-mono mt-1 max-w-sm truncate' }, url)
     }
   },
   {
     accessorKey: 'events',
     enableGlobalFilter: false,
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.event', 2))
+      return h('div', { class: 'text-left' }, t('globals.terms.event', 2))
     },
     cell: function ({ row }) {
       const events = row.getValue('events')
-      return h('div', { class: 'text-center' }, [
+      return h('div', { class: 'text-left' }, [
         h(
           Badge,
           { variant: 'secondary', class: 'text-xs' },
@@ -57,10 +57,10 @@ export const createColumns = (t) => [
   {
     accessorKey: 'is_active',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.status')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.status')),
     cell: ({ row }) => {
       const isActive = row.getValue('is_active')
-      return h('div', { class: 'text-center' }, [
+      return h('div', { class: 'text-left' }, [
         h(
           Badge,
           {
@@ -76,10 +76,10 @@ export const createColumns = (t) => [
     accessorKey: 'created_at',
     enableGlobalFilter: false,
     header: function () {
-      return h('div', { class: 'text-center' }, t('globals.terms.createdAt'))
+      return h('div', { class: 'text-left' }, t('globals.terms.createdAt'))
     },
     cell: function ({ row }) {
-      return h('div', { class: 'text-center text-sm' }, format(row.getValue('created_at'), 'PPpp'))
+      return h('div', { class: 'text-left text-sm' }, format(row.getValue('created_at'), 'PPpp'))
     }
   },
   {

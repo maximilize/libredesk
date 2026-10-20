@@ -6,11 +6,11 @@ import HelpCenterDropdown from './HelpCenterDropdown.vue'
 export const createHelpCenterColumns = (t, { onOpen, onEdit, onDelete, onToggle } = {}) => [
   {
     accessorKey: 'name',
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.name')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.name')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         h(
           'button',
           {
@@ -24,22 +24,22 @@ export const createHelpCenterColumns = (t, { onOpen, onEdit, onDelete, onToggle 
   },
   {
     accessorKey: 'slug',
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.slug')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.slug')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         h(Badge, { variant: 'secondary', class: 'font-normal' }, () => `/${row.getValue('slug')}`)
       )
   },
   {
     accessorKey: 'is_active',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.status')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.status')),
     cell: ({ row }) =>
       h(
         'div',
-        { class: 'text-center' },
+        { class: 'text-left' },
         h(Badge, { variant: row.getValue('is_active') ? 'success' : 'secondary' }, () =>
           row.getValue('is_active') ? t('globals.terms.active') : t('globals.terms.paused')
         )
@@ -48,9 +48,9 @@ export const createHelpCenterColumns = (t, { onOpen, onEdit, onDelete, onToggle 
   {
     accessorKey: 'updated_at',
     enableGlobalFilter: false,
-    header: () => h('div', { class: 'text-center' }, t('globals.terms.updatedAt')),
+    header: () => h('div', { class: 'text-left' }, t('globals.terms.updatedAt')),
     cell: ({ row }) =>
-      h('div', { class: 'text-center' }, format(row.getValue('updated_at'), 'PPpp'))
+      h('div', { class: 'text-left' }, format(row.getValue('updated_at'), 'PPpp'))
   },
   {
     id: 'actions',
