@@ -57,6 +57,7 @@ import (
 	whatsappapi "github.com/abhinavxd/libredesk/internal/whatsapp"
 	whatsappTemplate "github.com/abhinavxd/libredesk/internal/whatsapp/template"
 	"github.com/abhinavxd/libredesk/internal/ws"
+	"github.com/jmoiron/sqlx"
 	"github.com/knadh/go-i18n"
 	"github.com/knadh/koanf/v2"
 	"github.com/knadh/stuffbin"
@@ -139,6 +140,7 @@ type App struct {
 	contextLink        *contextlink.Manager
 	rateLimit          *ratelimit.Limiter
 	redis              *redis.Client
+	db                 *sqlx.DB
 	fc                 *fastcache.FastCache
 	importer           *importer.Importer
 	whatsappTemplate   *whatsappTemplate.Manager
@@ -351,6 +353,7 @@ func main() {
 		proactive:        initProactive(db, i18n),
 		rateLimit:        rateLimiter,
 		redis:            rdb,
+		db:               db,
 		fc:               initFastCache(rdb),
 		userNotification: userNotification,
 		whatsappClient:   waClient,
