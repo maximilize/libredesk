@@ -197,8 +197,9 @@ func (e *Email) fetchAndProcessMessages(ctx context.Context, client *imapclient.
 
 	// Fetch envelope and headers needed for auto-reply detection.
 	fetchOptions := &imap.FetchOptions{
-		Envelope: true,
-		UID:      true,
+		Envelope:     true,
+		UID:          true,
+		InternalDate: true,
 		BodySection: []*imap.FetchItemBodySection{
 			{
 				Specifier: imap.PartSpecifierHeader,
@@ -224,6 +225,7 @@ func (e *Email) fetchAndProcessMessages(ctx context.Context, client *imapclient.
 		ownVerification    bool
 		uid                imap.UID
 		extractedMessageID string
+		receivedAt         time.Time
 	}
 	var messages []msgData
 
@@ -256,6 +258,7 @@ func (e *Email) fetchAndProcessMessages(ctx context.Context, client *imapclient.
 			ownVerification    bool
 			uid                imap.UID
 			extractedMessageID string
+			receivedAt         time.Time
 		)
 		// Process all fetch items for the current message.
 		for {
@@ -300,6 +303,9 @@ func (e *Email) fetchAndProcessMessages(ctx context.Context, client *imapclient.
 			if uidData, ok := item.(imapclient.FetchItemDataUID); ok {
 				uid = uidData.UID
 			}
+			if date, ok := item.(imapclient.FetchItemDataInternalDate); ok {
+				receivedAt = date.Time
+			}
 		}
 
 		// Skip if we couldn't get the envelope.
@@ -308,7 +314,7 @@ func (e *Email) fetchAndProcessMessages(ctx context.Context, client *imapclient.
 			continue
 		}
 
-		messages = append(messages, msgData{env: env, seqNum: msg.SeqNum, uid: uid, autoReply: autoReply, isLoop: isLoop, verificationToken: verificationToken, ownVerification: ownVerification, extractedMessageID: extractedMessageID})
+		messages = append(messages, msgData{env: env, seqNum: msg.SeqNum, uid: uid, autoReply: autoReply, isLoop: isLoop, verificationToken: verificationToken, ownVerification: ownVerification, extractedMessageID: extractedMessageID, receivedAt: receivedAt})
 	}
 
 	// Now process each collected message.
@@ -346,7 +352,7 @@ func (e *Email) fetchAndProcessMessages(ctx context.Context, client *imapclient.
 			continue
 		}
 		// Process the envelope.
-		if err := e.processEnvelope(ctx, client, msgData.env, msgData.seqNum, inboxID, msgData.extractedMessageID); err != nil && err != context.Canceled {
+		if err := e.processEnvelope(ctx, client, msgData.env, msgData.seqNum, inboxID, msgData.extractedMessageID, msgData.receivedAt); err != nil && err != context.Canceled {
 			e.lo.Error("error processing envelope", "error", err)
 		}
 	}
@@ -365,8 +371,8 @@ func (e *Email) fetchAndProcessMessages(ctx context.Context, client *imapclient.
 	return nil
 }
 
-// processEnvelope processes a single email envelope.
-func (e *Email) processEnvelope(ctx context.Context, client *imapclient.Client, env *imap.Envelope, seqNum uint32, inboxID int, extractedMessageID string) error {
+// processEnvelope processes a single email envelope. receivedAt is the IMAP INTERNALDATE of the message, zero if the server did not return one.
+func (e *Email) processEnvelope(ctx context.Context, client *imapclient.Client, env *imap.Envelope, seqNum uint32, inboxID int, extractedMessageID string, receivedAt time.Time) error {
 	if len(env.From) == 0 {
 		e.lo.Warn("no sender received for email", "message_id", env.MessageID)
 		return nil
@@ -454,13 +460,19 @@ func (e *Email) processEnvelope(ctx context.Context, client *imapclient.Client, 
 		e.lo.Error("error marshalling meta", "error", err)
 		return fmt.Errorf("marshalling meta: %w", err)
 	}
+	// Prefer the server's INTERNALDATE over the sender-controlled Date header; leave zero to fall back to the DB default.
+	if receivedAt.IsZero() {
+		receivedAt = env.Date
+	}
+
 	incomingMsg := models.IncomingMessage{
-		Channel:  ChannelEmail,
-		InboxID:  inboxID,
-		Contact:  contact,
-		Subject:  env.Subject,
-		SourceID: null.StringFrom(messageID),
-		Meta:     meta,
+		Channel:    ChannelEmail,
+		InboxID:    inboxID,
+		Contact:    contact,
+		Subject:    env.Subject,
+		SourceID:   null.StringFrom(messageID),
+		Meta:       meta,
+		ReceivedAt: receivedAt,
 	}
 
 	// Fetch full message body.
