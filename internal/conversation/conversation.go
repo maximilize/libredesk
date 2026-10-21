@@ -365,6 +365,7 @@ type queries struct {
 	UpdateConversationAssignedTeam      *sqlx.Stmt `query:"update-conversation-assigned-team"`
 	UpdateConversationCustomAttributes  *sqlx.Stmt `query:"update-conversation-custom-attributes"`
 	UpdateConversationPriority          *sqlx.Stmt `query:"update-conversation-priority"`
+	UpdateConversationInbox             *sqlx.Stmt `query:"update-conversation-inbox"`
 	UpdateConversationStatus            *sqlx.Stmt `query:"update-conversation-status"`
 	UpdateConversationLastMessage       *sqlx.Stmt `query:"update-conversation-last-message"`
 	InsertConversationParticipant       *sqlx.Stmt `query:"insert-conversation-participant"`
@@ -1063,6 +1064,53 @@ func (c *Manager) UpdateConversationPriority(uuid string, priorityID int, priori
 		return envelope.NewError(envelope.GeneralError, c.i18n.T("globals.messages.somethingWentWrong"), nil)
 	}
 	c.BroadcastConversationUpdate(uuid, map[string]any{"priority": priority})
+	return nil
+}
+
+// UpdateConversationInbox moves an email conversation to another enabled email inbox, so replies go out from that inbox.
+// Incoming replies still thread by Message-ID and plus-addressing, which don't depend on the inbox.
+func (c *Manager) UpdateConversationInbox(uuid string, inboxID int, actor umodels.User) error {
+	conversation, err := c.GetConversation(0, uuid, "")
+	if err != nil {
+		return err
+	}
+	if conversation.InboxID == inboxID {
+		return nil
+	}
+	if conversation.InboxChannel != inbox.ChannelEmail {
+		return envelope.NewError(envelope.InputError, c.i18n.T("conversation.moveInboxEmailOnly"), nil)
+	}
+
+	target, err := c.inboxStore.GetDBRecord(inboxID)
+	if err != nil {
+		return err
+	}
+	if target.Channel != inbox.ChannelEmail {
+		return envelope.NewError(envelope.InputError, c.i18n.T("conversation.moveInboxEmailOnly"), nil)
+	}
+	if !target.Enabled {
+		return envelope.NewError(envelope.InputError, c.i18n.T("status.disabledInbox"), nil)
+	}
+
+	if _, err := c.q.UpdateConversationInbox.Exec(uuid, inboxID); err != nil {
+		c.lo.Error("error updating conversation inbox", "uuid", uuid, "inbox_id", inboxID, "error", err)
+		return envelope.NewError(envelope.GeneralError, c.i18n.T("globals.messages.somethingWentWrong"), nil)
+	}
+
+	if err := c.RecordInboxChange(target.Name, uuid, actor); err != nil {
+		return err
+	}
+
+	// The reply box picks its sender addresses from these fields.
+	if moved, err := c.GetConversation(0, uuid, ""); err == nil {
+		c.BroadcastConversationUpdate(uuid, map[string]any{
+			"inbox_id":       moved.InboxID,
+			"inbox_name":     moved.InboxName,
+			"inbox_mail":     moved.InboxMail,
+			"inbox_reply_to": moved.InboxReplyTo,
+			"inbox_aliases":  moved.InboxAliases,
+		})
+	}
 	return nil
 }
 

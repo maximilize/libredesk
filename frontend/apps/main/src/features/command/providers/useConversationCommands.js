@@ -8,6 +8,7 @@ import {
   Contact,
   Download,
   Flag,
+  Inbox,
   Link2,
   MailOpen,
   MessageSquare,
@@ -29,6 +30,7 @@ import { useUserStore } from '@main/stores/user'
 import { useUsersStore } from '@main/stores/users'
 import { useTeamStore } from '@main/stores/team'
 import { useTagStore } from '@main/stores/tag'
+import { useInboxStore } from '@main/stores/inbox'
 import { useEmitter } from '@main/composables/useEmitter'
 import { EMITTER_EVENTS, CONVERSATION_ACTIONS } from '@main/constants/emitterEvents'
 import { permissions as perms } from '@main/constants/permissions'
@@ -56,6 +58,14 @@ const REOPENABLE_STATUSES = [
   CONVERSATION_DEFAULT_STATUSES.SNOOZED
 ]
 
+// Only email conversations can move, and only to another enabled email inbox.
+export const moveInboxTargets = (inboxes, conv) =>
+  conv?.inbox_channel === 'email'
+    ? inboxes.filter(
+        (inbox) => inbox.channel === 'email' && inbox.enabled && inbox.id !== conv.inbox_id
+      )
+    : []
+
 export const formatSnoozeDuration = (minutes) =>
   minutes % 60 === 0 && minutes >= 60 ? `${minutes / 60}h` : `${minutes}m`
 
@@ -68,6 +78,7 @@ export function useConversationCommands({ openSnoozeDatePicker }) {
   const usersStore = useUsersStore()
   const teamStore = useTeamStore()
   const tagStore = useTagStore()
+  const inboxStore = useInboxStore()
 
   const section = SECTIONS.CONVERSATION
 
@@ -175,6 +186,29 @@ export function useConversationCommands({ openSnoozeDatePicker }) {
         }
       }))
   ]
+
+  const inboxCommands = (conv) => {
+    const targets = moveInboxTargets(inboxStore.inboxes, conv)
+    if (!targets.length) return []
+    return [
+      {
+        id: 'conv.move-inbox',
+        label: t('conversation.moveToInbox'),
+        keywords: [t('globals.terms.inbox')],
+        section,
+        icon: Inbox,
+        permission: perms.CONVERSATIONS_UPDATE_TEAM_ASSIGNEE,
+        group: true
+      },
+      ...targets.map((inbox) => ({
+        id: `conv.move-inbox.${inbox.id}`,
+        label: inbox.name,
+        parent: 'conv.move-inbox',
+        icon: Inbox,
+        run: () => conversationStore.updateInbox(conv.uuid, inbox.id)
+      }))
+    ]
+  }
 
   const assignAgent = (id) => {
     conversationStore.current.assigned_user_id = id
@@ -430,6 +464,7 @@ export function useConversationCommands({ openSnoozeDatePicker }) {
       ...priorityCommands(conv),
       ...agentCommands(conv),
       ...teamCommands(conv),
+      ...inboxCommands(conv),
       ...tagCommands(conv),
       ...miscCommands(conv),
       ...composeCommands()
