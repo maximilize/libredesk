@@ -42,6 +42,10 @@ type priorityUpdateReq struct {
 	Priority string `json:"priority"`
 }
 
+type inboxUpdateReq struct {
+	InboxID int `json:"inbox_id"`
+}
+
 type statusUpdateReq struct {
 	Status       string `json:"status"`
 	SnoozedUntil string `json:"snoozed_until,omitempty"`
@@ -647,6 +651,36 @@ func handleUpdateConversationPriority(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 
+	return r.SendEnvelope(true)
+}
+
+// handleUpdateConversationInbox moves a conversation to another inbox.
+func handleUpdateConversationInbox(r *fastglue.Request) error {
+	var (
+		app   = r.Context.(*App)
+		uuid  = r.RequestCtx.UserValue("uuid").(string)
+		auser = r.RequestCtx.UserValue("user").(amodels.User)
+		req   = inboxUpdateReq{}
+	)
+
+	if err := r.Decode(&req, "json"); err != nil {
+		app.lo.Error("error decoding inbox update request", "error", err)
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("errors.parsingRequest"), nil, envelope.InputError)
+	}
+	if req.InboxID <= 0 {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.Ts("globals.messages.empty", "name", "`inbox_id`"), nil, envelope.InputError)
+	}
+
+	user, err := app.user.GetAgentCachedOrLoad(auser.ID)
+	if err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+	if _, err := enforceConversationAccess(app, uuid, user); err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+	if err := app.conversation.UpdateConversationInbox(uuid, req.InboxID, user); err != nil {
+		return sendErrorEnvelope(r, err)
+	}
 	return r.SendEnvelope(true)
 }
 

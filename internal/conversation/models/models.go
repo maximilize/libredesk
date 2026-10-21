@@ -58,6 +58,7 @@ var (
 	ActivitySLASet              = "sla_set"
 	ActivityParticipantAdded    = "participant_added"
 	ActivityCSATNotSent         = "csat_not_sent"
+	ActivityInboxChange         = "inbox_change"
 
 	ContentTypeText = "text"
 	ContentTypeHTML = "html"
