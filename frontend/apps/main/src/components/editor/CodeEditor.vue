@@ -25,6 +25,21 @@ const theme = new Compartment()
 let editorView = null
 const codeEditor = useTemplateRef('codeEditor')
 
+// oneDark's syntax colors on the app's own background, so the editor doesn't stand out in dark mode.
+const darkTheme = [
+    EditorView.theme(
+        {
+            '&': { backgroundColor: 'hsl(var(--background))' },
+            '.cm-gutters': {
+                backgroundColor: 'hsl(var(--background))',
+                borderRight: '1px solid hsl(var(--border))'
+            }
+        },
+        { dark: true }
+    ),
+    oneDark
+]
+
 const initCodeEditor = (body) => {
     const langExtension = props.language === 'javascript' ? javascript() : html()
     const isEditable = !props.disabled && !props.readOnly
@@ -34,7 +49,7 @@ const initCodeEditor = (body) => {
         extensions: [
             basicSetup,
             langExtension,
-            theme.of(mode.value === 'dark' ? oneDark : []),
+            theme.of(mode.value === 'dark' ? darkTheme : []),
             EditorView.editable.of(isEditable),
             EditorView.theme({
                 '&': { height: props.readOnly ? 'auto' : '100%' },
@@ -66,7 +81,7 @@ onMounted(() => {
 onBeforeUnmount(() => editorView?.destroy())
 
 watch(mode, (value) => {
-    editorView?.dispatch({ effects: theme.reconfigure(value === 'dark' ? oneDark : []) })
+    editorView?.dispatch({ effects: theme.reconfigure(value === 'dark' ? darkTheme : []) })
 })
 
 watch(() => props.modelValue, (newVal) => {
