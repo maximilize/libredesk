@@ -771,6 +771,8 @@
   "conversation.filters.tooManyGroups": "Too many filter groups. A view can have at most {max}. Remove the extra groups and save again.",
   "conversation.hideQuotedText": "Hide quoted text",
   "conversation.mentions": "Mentions",
+  "conversation.moveInboxEmailOnly": "Only email conversations can be moved, and only to an email inbox.",
+  "conversation.moveToInbox": "Move to inbox",
   "conversation.myInbox": "My inbox",
   "conversation.newConversation": "New conversation",
   "conversation.noConversationsFound": "No conversations found",

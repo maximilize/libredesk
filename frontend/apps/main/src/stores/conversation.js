@@ -827,6 +827,17 @@ export const useConversationStore = defineStore('conversation', () => {
     }
   }
 
+  async function updateInbox (uuid, inboxID) {
+    try {
+      await api.updateConversationInbox(uuid, { inbox_id: inboxID })
+    } catch (error) {
+      emitter.emit(EMITTER_EVENTS.SHOW_TOAST, {
+        variant: 'destructive',
+        description: handleHTTPError(error).message
+      })
+    }
+  }
+
   async function updateStatus (uuid, v) {
     if (!uuid) return
     const isCurrent = () => conversation.data?.uuid === uuid
@@ -1345,6 +1356,7 @@ export const useConversationStore = defineStore('conversation', () => {
     updateConversationTags,
     updateAssignee,
     updatePriority,
+    updateInbox,
     updateStatus,
     refreshConversationList,
     resetConversations,

@@ -76,6 +76,18 @@
             <DropdownMenuItem @click="downloadTranscript">
               {{ t('conversation.downloadTranscript') }}
             </DropdownMenuItem>
+            <DropdownMenuSub v-if="moveInboxTargets.length">
+              <DropdownMenuSubTrigger>{{ t('conversation.moveToInbox') }}</DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem
+                  v-for="inbox in moveInboxTargets"
+                  :key="inbox.id"
+                  @click="conversationStore.updateInbox(conversationStore.current.uuid, inbox.id)"
+                >
+                  {{ inbox.name }}
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuItem
               v-if="userStore.can(perms.MESSAGES_WRITE_PRIVATE)"
               :disabled="isSummarizing"
@@ -103,6 +115,7 @@ const MOBILE_ICON_BUTTON_CLASS = 'w-11 h-11 lg:w-8 lg:h-8 p-0'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useConversationStore } from '@main/stores/conversation'
 import { useUserStore } from '@main/stores/user'
+import { useInboxStore } from '@main/stores/inbox'
 import { Clock, MoreHorizontal, ChevronLeft, PanelRight, PanelRightClose } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useIsMobile } from '@shared-ui/composables'
@@ -110,6 +123,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from '@shared-ui/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@shared-ui/components/ui/tooltip'
@@ -121,7 +137,10 @@ import WhatsAppComposer from './WhatsAppComposer.vue'
 import { WHATSAPP_CHANNEL } from '@main/features/conversation/whatsappTemplate'
 import { EMITTER_EVENTS, CONVERSATION_ACTIONS } from '@main/constants/emitterEvents.js'
 import { useCommandPalette } from '@main/features/command/useCommandPalette'
-import { SNOOZE_COMMAND } from '@main/features/command/providers/useConversationCommands'
+import {
+  SNOOZE_COMMAND,
+  moveInboxTargets as getMoveInboxTargets
+} from '@main/features/command/providers/useConversationCommands'
 import { CONVERSATION_DEFAULT_STATUSES } from '@main/constants/conversation'
 import { useEmitter } from '@main/composables/useEmitter'
 import { useI18n } from 'vue-i18n'
@@ -173,6 +192,13 @@ const downloadTranscript = async () => {
     })
   }
 }
+
+const inboxStore = useInboxStore()
+const moveInboxTargets = computed(() =>
+  userStore.can(perms.CONVERSATIONS_UPDATE_TEAM_ASSIGNEE)
+    ? getMoveInboxTargets(inboxStore.inboxes, conversationStore.current)
+    : []
+)
 
 const isWhatsAppChannel = computed(
   () => conversationStore.current?.inbox_channel === WHATSAPP_CHANNEL

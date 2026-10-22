@@ -907,6 +907,11 @@ func (m *Manager) RecordPriorityChange(priority, conversationUUID string, actor 
 	return m.InsertConversationActivity(models.ActivityPriorityChange, conversationUUID, priority, actor)
 }
 
+// RecordInboxChange records an activity for a move to another inbox.
+func (m *Manager) RecordInboxChange(inboxName, conversationUUID string, actor umodels.User) error {
+	return m.InsertConversationActivity(models.ActivityInboxChange, conversationUUID, inboxName, actor)
+}
+
 // RecordStatusChange records an activity for a status change.
 func (m *Manager) RecordStatusChange(status, conversationUUID string, actor umodels.User) error {
 	return m.InsertConversationActivity(models.ActivityStatusChange, conversationUUID, status, actor)
@@ -993,6 +998,8 @@ func (m *Manager) getMessageActivityContent(activityType, newValue, actorName st
 		content = fmt.Sprintf("%s set %s SLA policy", actorName, newValue)
 	case models.ActivityParticipantAdded:
 		content = fmt.Sprintf("%s joined the conversation", newValue)
+	case models.ActivityInboxChange:
+		content = fmt.Sprintf("%s moved the conversation to the %s inbox", actorName, newValue)
 	case models.ActivityCSATNotSent:
 		content = m.i18n.T("conversation.whatsapp.csatNotSent")
 	default:
