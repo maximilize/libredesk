@@ -67,6 +67,7 @@ const groups = computed(() => [
       { label: t('shortcuts.previousConversation'), keys: [alt, 'J'] },
       { label: t('shortcuts.nextConversation'), keys: [alt, 'K'] },
       { label: t('globals.terms.snooze'), keys: [alt, 'Z'] },
+      { label: t('actions.setStatus'), keys: [alt, 'S'] },
       { label: t('actions.setPriority'), keys: [alt, 'P'] },
       { label: t('actions.assignAgent'), keys: [alt, 'A'] },
       { label: t('command.switchToReply'), keys: [alt, 'R'] },

@@ -94,6 +94,7 @@ export function useGlobalShortcuts() {
     KeyJ: stepConversation(-1),
     KeyK: stepConversation(1),
     KeyZ: openGroup(SNOOZE_COMMAND, perms.CONVERSATIONS_UPDATE_STATUS),
+    KeyS: openGroup('conv.status', perms.CONVERSATIONS_UPDATE_STATUS),
     KeyP: openGroup('conv.priority', perms.CONVERSATIONS_UPDATE_PRIORITY),
     KeyA: openGroup('conv.assign-agent', perms.CONVERSATIONS_UPDATE_USER_ASSIGNEE),
     KeyR: compose('reply', perms.MESSAGES_WRITE),
