@@ -62,6 +62,11 @@ export function useConversationFilters () {
             operators: FIELD_OPERATORS.SELECT,
             options: iStore.options
         },
+        subject: {
+            label: t('globals.terms.subject'),
+            type: FIELD_TYPE.TEXT,
+            operators: FIELD_OPERATORS.TEXT
+        },
         tags: {
             label: t('globals.terms.tag', 2),
             type: FIELD_TYPE.MULTI_SELECT,
