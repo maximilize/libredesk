@@ -197,12 +197,20 @@ func TestConversationSearchFieldsAndRanking(t *testing.T) {
 		t.Fatalf("next started-last conversation page returned results %+v", results)
 	}
 
-	results, hasMore, cursor, err = manager.Conversations(models.Query{Term: "Needle", PageSize: 10}, scope)
+	results, hasMore, cursor, err = manager.Conversations(models.Query{Term: "needle SUBJ", PageSize: 10}, scope)
+	if err != nil {
+		t.Fatalf("searching by subject: %v", err)
+	}
+	if len(results) != 1 || hasMore || cursor != "" || results[0].ReferenceNumber != "999" {
+		t.Fatalf("subject search returned results %+v, has_more %t, cursor %q, want only 999", results, hasMore, cursor)
+	}
+
+	results, hasMore, cursor, err = manager.Conversations(models.Query{Term: "Name", PageSize: 10}, scope)
 	if err != nil {
 		t.Fatalf("searching unsupported fields: %v", err)
 	}
 	if len(results) != 0 || hasMore || cursor != "" {
-		t.Fatalf("subject or name matched: results %d, has_more %t, cursor %q", len(results), hasMore, cursor)
+		t.Fatalf("contact name matched: results %d, has_more %t, cursor %q", len(results), hasMore, cursor)
 	}
 
 	messages, hasMore, cursor, err := manager.Messages(models.Query{Term: "ordinary", PageSize: 10}, scope)
@@ -263,6 +271,55 @@ func TestConversationSearchFieldsAndRanking(t *testing.T) {
 		}
 		if len(contacts) != 0 {
 			t.Fatalf("contact search for %q returned %d results", term, len(contacts))
+		}
+	}
+}
+
+func TestConversationSubjectSearchRespectsReadScope(t *testing.T) {
+	db := testutil.NewDB(t, "search_conversation_subject_scope")
+	lo := logf.New(logf.Opts{})
+	manager, err := New(Opts{
+		DB:             db,
+		Lo:             &lo,
+		I18n:           testutil.NewI18n(t),
+		FilterLocation: func() string { return "UTC" },
+	})
+	if err != nil {
+		t.Fatalf("creating search manager: %v", err)
+	}
+	if _, err := db.Exec(`INSERT INTO inboxes (name, channel) VALUES ('Search test', 'email')`); err != nil {
+		t.Fatalf("inserting inbox: %v", err)
+	}
+	var agentID int
+	if err := db.Get(&agentID, `INSERT INTO users (type, email, first_name) VALUES ('agent', 'agent@example.com', 'Agent') RETURNING id`); err != nil {
+		t.Fatalf("inserting agent: %v", err)
+	}
+
+	now := time.Date(2026, time.October, 1, 0, 0, 0, 0, time.UTC)
+	mine, _ := insertSearchConversation(t, db, "301", "mine@example.com", "Mine", "", "Refund request", now)
+	insertSearchConversation(t, db, "302", "theirs@example.com", "Theirs", "", "Refund request", now)
+	insertSearchConversation(t, db, "303", "percent@example.com", "Percent", "", "50% off", now)
+	if _, err := db.Exec(`UPDATE conversations SET assigned_user_id = $1 WHERE id = $2`, agentID, mine); err != nil {
+		t.Fatalf("assigning conversation: %v", err)
+	}
+
+	assigned := models.ReadScope{UserID: agentID, Read: true, ReadAssigned: true}
+	results, _, _, err := manager.Conversations(models.Query{Term: "refund", PageSize: 10}, assigned)
+	if err != nil {
+		t.Fatalf("searching assigned conversations by subject: %v", err)
+	}
+	if len(results) != 1 || results[0].ReferenceNumber != "301" {
+		t.Fatalf("assigned-only subject search returned %+v, want only 301", results)
+	}
+
+	all := models.ReadScope{Read: true, ReadAll: true}
+	for term, want := range map[string]int{"refund": 2, "0%": 1, "0_": 0} {
+		results, _, _, err := manager.Conversations(models.Query{Term: term, PageSize: 10}, all)
+		if err != nil {
+			t.Fatalf("searching conversations for %q: %v", term, err)
+		}
+		if len(results) != want {
+			t.Fatalf("subject search for %q returned %d results, want %d", term, len(results), want)
 		}
 	}
 }
