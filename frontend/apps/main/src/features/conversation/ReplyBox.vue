@@ -77,6 +77,11 @@
         @escapeKeyDown="isEditorFullscreen = false"
         :hide-close-button="true"
       >
+        <DraftSuggestionHint
+          v-if="isEditorFullscreen && draftSuggestion && messageType === 'reply'"
+          :suggestion="draftSuggestion"
+          @discard="discardSuggestion()"
+        />
         <ReplyBoxContent
           v-if="isEditorFullscreen"
           ref="fullscreenContentRef"
@@ -146,6 +151,11 @@
       :class="{ '!bg-private': messageType === 'private_note', 'ai-generating': isGenerating }"
       v-if="!isCollapsed && !isEditorFullscreen"
     >
+      <DraftSuggestionHint
+        v-if="draftSuggestion && messageType === 'reply'"
+        :suggestion="draftSuggestion"
+        @discard="discardSuggestion()"
+      />
       <ReplyBoxContent
         ref="replyBoxContentRef"
         :isFullscreen="false"
@@ -192,6 +202,7 @@ import { MACRO_CONTEXT } from '@main/constants/conversation'
 import { WHATSAPP_CHANNEL, isWhatsAppWindowOpen } from '@main/features/conversation/whatsappTemplate'
 import { useUserStore } from '@main/stores/user'
 import { useDraftManager } from '@main/composables/useDraftManager'
+import DraftSuggestionHint from './DraftSuggestionHint.vue'
 import api from '@main/api'
 import { useI18n } from 'vue-i18n'
 import { useConversationStore } from '@main/stores/conversation'
@@ -333,7 +344,9 @@ const {
   clearDraft,
   loadedAttachments,
   loadedMacroActions,
-  loadedMacroID
+  loadedMacroID,
+  suggestion: draftSuggestion,
+  discardSuggestion
 } = useDraftManager(currentConversationUUID, messageType, mediaFiles)
 
 // Rest of existing state

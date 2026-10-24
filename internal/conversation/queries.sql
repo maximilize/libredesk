@@ -1287,6 +1287,21 @@ WHERE conversation_id IN (
 ) AND user_id = $3
 AND ($4::text = '' OR type = $4::text);
 
+-- name: get-conversation-draft-suggestion
+-- The newest shared reply suggestion in a conversation, whoever wrote it.
+SELECT cd.id, cd.conversation_id, cd.user_id, cd.type, cd.content, cd.meta, cd.created_at, cd.updated_at, c.uuid AS conversation_uuid,
+    u.id AS "author.id", u.first_name AS "author.first_name", u.last_name AS "author.last_name"
+FROM conversation_drafts cd
+INNER JOIN conversations c ON cd.conversation_id = c.id
+INNER JOIN users u ON cd.user_id = u.id
+WHERE cd.conversation_id = $1 AND cd.type = 'reply' AND cd.meta->>'suggestion' = 'true'
+ORDER BY cd.updated_at DESC
+LIMIT 1;
+
+-- name: delete-conversation-draft-suggestions
+DELETE FROM conversation_drafts
+WHERE conversation_id = $1 AND type = 'reply' AND meta->>'suggestion' = 'true';
+
 -- name: delete-stale-drafts
 DELETE FROM conversation_drafts
 WHERE created_at < $1;

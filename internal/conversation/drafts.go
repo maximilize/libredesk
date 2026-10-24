@@ -50,6 +50,30 @@ func (m *Manager) DeleteConversationDraft(conversationID int, uuid string, userI
 	return nil
 }
 
+// GetConversationDraftSuggestion returns the newest shared reply suggestion in a conversation, or nil if there is none.
+func (m *Manager) GetConversationDraftSuggestion(conversationID int) (*models.DraftSuggestion, error) {
+	var suggestions []models.DraftSuggestion
+	if err := m.q.GetConversationDraftSuggestion.Select(&suggestions, conversationID); err != nil {
+		m.lo.Error("error fetching draft suggestion", "conversation_id", conversationID, "error", err)
+		return nil, envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
+	}
+	if len(suggestions) == 0 {
+		return nil, nil
+	}
+	s := suggestions[0]
+	s.Content = m.resolveDraftInlineCIDs(conversationID, int(s.UserID), s.Content)
+	return &s, nil
+}
+
+// DeleteConversationDraftSuggestions deletes every shared reply suggestion in a conversation.
+func (m *Manager) DeleteConversationDraftSuggestions(conversationID int) error {
+	if _, err := m.q.DeleteConversationDraftSuggestions.Exec(conversationID); err != nil {
+		m.lo.Error("error deleting draft suggestions", "conversation_id", conversationID, "error", err)
+		return envelope.NewError(envelope.GeneralError, m.i18n.T("globals.messages.somethingWentWrong"), nil)
+	}
+	return nil
+}
+
 // DeleteStaleDrafts deletes drafts older than the specified retention period.
 func (m *Manager) DeleteStaleDrafts(ctx context.Context, retentionPeriod time.Duration) error {
 	cutoff := time.Now().Add(-retentionPeriod)

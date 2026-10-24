@@ -4,6 +4,7 @@ import { useConversationStore } from '@main/stores/conversation'
 import { MACRO_CONTEXT } from '@main/constants/conversation'
 import { getTextFromHTML } from '@shared-ui/utils/string.js'
 import api from '@main/api'
+import { shouldOfferSuggestion, isUntouchedSuggestion } from './draftSuggestion'
 
 const hasKeys = (obj, keys) => Boolean(obj) && keys.every(key => key in obj)
 
@@ -54,6 +55,8 @@ export function useDraftManager (conversationUUID, messageType, uploadedFiles = 
   const loadedAttachments = ref([])
   const loadedMacroActions = ref([])
   const loadedMacroID = ref(0)
+  // A shared AI suggestion prefilled into an empty reply box; null once the agent edits or discards it.
+  const suggestion = ref(null)
 
   // Live-key guard: the editor is transiently empty during open/switch and must not clobber a stored draft.
   const loadedKey = ref(null)
@@ -99,6 +102,29 @@ export function useDraftManager (conversationUUID, messageType, uploadedFiles = 
     }
     loadedKey.value = draftKey(uuid, type)
     isLoading.value = false
+    await offerSuggestion(uuid, type)
+  }
+
+  const offerSuggestion = async (uuid, type) => {
+    suggestion.value = null
+    if (!shouldOfferSuggestion({ type, ownDraft: conversationStore.getDraft(uuid, type), editorHtml: htmlContent.value })) return
+    let result = null
+    try {
+      result = (await api.getDraftSuggestion(uuid)).data?.data || null
+    } catch {
+      return
+    }
+    // The agent may have switched conversations or started typing while the request was in flight.
+    if (!result?.content || loadedKey.value !== draftKey(uuid, type) || getTextFromHTML(htmlContent.value).length > 0) return
+    suggestion.value = result
+    htmlContent.value = result.content
+  }
+
+  const discardSuggestion = (uuid = conversationUUID.value) => {
+    if (!suggestion.value || !uuid) return
+    suggestion.value = null
+    htmlContent.value = ''
+    api.deleteDraftSuggestion(uuid).catch(() => {})
   }
 
   // Serialize every server write so a delete can never land before an earlier save and resurrect the row.
@@ -110,6 +136,8 @@ export function useDraftManager (conversationUUID, messageType, uploadedFiles = 
   // Update the store synchronously; server sync runs in the background, never awaited.
   const save = (uuid, type) => {
     const draft = buildDraft()
+    if (isUntouchedSuggestion(draft.content, suggestion.value)) return
+    if (suggestion.value) suggestion.value = null
     if (sameDraft(draft, conversationStore.getDraft(uuid, type))) return
     if (isDraftEmpty(draft)) {
       conversationStore.removeDraft(uuid, type)
@@ -128,7 +156,10 @@ export function useDraftManager (conversationUUID, messageType, uploadedFiles = 
     if (!uuid) return
     conversationStore.removeDraft(uuid, type)
     queueSync(() => api.deleteDraft(uuid, type).catch(() => {}))
-    if (uuid === conversationUUID.value && type === messageType.value) applyDraft(null)
+    if (uuid === conversationUUID.value && type === messageType.value) {
+      suggestion.value = null
+      applyDraft(null)
+    }
   }
 
   const watchSources = [
@@ -174,6 +205,8 @@ export function useDraftManager (conversationUUID, messageType, uploadedFiles = 
     clearDraft,
     loadedAttachments,
     loadedMacroActions,
-    loadedMacroID
+    loadedMacroID,
+    suggestion,
+    discardSuggestion
   }
 }

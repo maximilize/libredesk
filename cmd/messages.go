@@ -291,6 +291,10 @@ func handleSendMessage(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 	markAssignmentNotificationRead(app, conv, user)
+	// A sent reply answers the conversation, so a pending suggestion must not come back.
+	if err := app.conversation.DeleteConversationDraftSuggestions(conv.ID); err != nil {
+		app.lo.Error("error deleting draft suggestions after reply", "conversation_uuid", cuuid, "error", err)
+	}
 	resolveQuotedCIDs(app, &message)
 	resolveAttachmentCIDs(&message, rootURL)
 	return r.SendEnvelope(message)
