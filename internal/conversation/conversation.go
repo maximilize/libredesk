@@ -381,10 +381,12 @@ type queries struct {
 	RemoveConversationAssignee          *sqlx.Stmt `query:"remove-conversation-assignee"`
 
 	// Draft queries.
-	UpsertConversationDraft *sqlx.Stmt `query:"upsert-conversation-draft"`
-	GetAllUserDrafts        *sqlx.Stmt `query:"get-all-user-drafts"`
-	DeleteConversationDraft *sqlx.Stmt `query:"delete-conversation-draft"`
-	DeleteStaleDrafts       *sqlx.Stmt `query:"delete-stale-drafts"`
+	UpsertConversationDraft            *sqlx.Stmt `query:"upsert-conversation-draft"`
+	GetAllUserDrafts                   *sqlx.Stmt `query:"get-all-user-drafts"`
+	DeleteConversationDraft            *sqlx.Stmt `query:"delete-conversation-draft"`
+	DeleteStaleDrafts                  *sqlx.Stmt `query:"delete-stale-drafts"`
+	GetConversationDraftSuggestion     *sqlx.Stmt `query:"get-conversation-draft-suggestion"`
+	DeleteConversationDraftSuggestions *sqlx.Stmt `query:"delete-conversation-draft-suggestions"`
 
 	// Message queries.
 	GetMessage                         *sqlx.Stmt `query:"get-message"`

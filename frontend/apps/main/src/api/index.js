@@ -455,6 +455,8 @@ const saveDraft = (uuid, type, data) =>
   })
 
 const getAllDrafts = () => http.get('/api/v1/drafts')
+const getDraftSuggestion = (uuid) => http.get(`/api/v1/conversations/${uuid}/draft-suggestion`)
+const deleteDraftSuggestion = (uuid) => http.delete(`/api/v1/conversations/${uuid}/draft-suggestion`)
 
 const deleteDraft = (uuid, type) =>
   http.delete(`/api/v1/conversations/${uuid}/draft`, { params: { type } })
@@ -796,6 +798,8 @@ export default {
   updateEmailNotificationSettings,
   saveDraft,
   getAllDrafts,
+  getDraftSuggestion,
+  deleteDraftSuggestion,
   deleteDraft,
   getCurrentUserViews,
   createView,

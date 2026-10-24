@@ -620,6 +620,19 @@ type ConversationDraft struct {
 	Meta             json.RawMessage `db:"meta" json:"meta"`
 }
 
+// DraftAuthor is the user who wrote a shared draft suggestion.
+type DraftAuthor struct {
+	ID        int64  `db:"id" json:"id"`
+	FirstName string `db:"first_name" json:"first_name"`
+	LastName  string `db:"last_name" json:"last_name"`
+}
+
+// DraftSuggestion is a reply draft marked with meta.suggestion, shown to every agent who has no draft of their own.
+type DraftSuggestion struct {
+	ConversationDraft
+	Author DraftAuthor `db:"author" json:"author"`
+}
+
 // MentionInput represents a mention in a private note from frontend.
 type MentionInput struct {
 	Type string `json:"type"` // "agent" or "team"

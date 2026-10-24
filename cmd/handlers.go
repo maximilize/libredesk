@@ -88,6 +88,9 @@ func initHandlers(g *fastglue.Fastglue, hub *ws.Hub) {
 	g.GET("/api/v1/drafts", auth(handleGetAllDrafts))
 	g.POST("/api/v1/conversations/{uuid}/draft", auth(handleUpsertConversationDraft))
 	g.DELETE("/api/v1/conversations/{uuid}/draft", auth(handleDeleteConversationDraft))
+	g.GET("/api/v1/conversations/{uuid}/draft-suggestion", perm(handleGetDraftSuggestion, "conversations:read"))
+	g.PUT("/api/v1/conversations/{uuid}/draft-suggestion", perm(handlePutDraftSuggestion, "messages:write_private"))
+	g.DELETE("/api/v1/conversations/{uuid}/draft-suggestion", perm(handleDeleteDraftSuggestion, "conversations:read"))
 
 	// Search.
 	g.GET("/api/v1/conversations/search", perm(handleSearchConversations, "conversations:read"))
