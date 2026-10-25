@@ -113,6 +113,9 @@
           :canSendReply="canSendReply"
           :canSendPrivateNote="canSendPrivateNote"
           @generateReply="handleGenerateReply"
+          :showTranslate="showTranslate"
+          :translateLanguage="customerLang"
+          @translateToCustomer="handleTranslateToCustomer"
           class="h-full flex-grow"
         />
       </DialogContent>
@@ -187,6 +190,9 @@
         :canSendReply="canSendReply"
         :canSendPrivateNote="canSendPrivateNote"
         @generateReply="handleGenerateReply"
+        :showTranslate="showTranslate"
+        :translateLanguage="customerLang"
+        @translateToCustomer="handleTranslateToCustomer"
       />
     </div>
   </div>
@@ -230,6 +236,11 @@ import { hasInlineImage, hasPendingInlineUpload } from '@main/composables/useInl
 import ReplyBoxContent from '@/features/conversation/ReplyBoxContent.vue'
 import { UserTypeAgent } from '@/constants/user'
 import { permissions as perms } from '@main/constants/permissions.js'
+import { useTranslationLanguage } from '@main/composables/useTranslationLanguage'
+import {
+  customerLanguage,
+  translationOriginalFor
+} from '@main/features/conversation/message/messageTranslation'
 
 const { t } = useI18n()
 const conversationStore = useConversationStore()
@@ -395,6 +406,47 @@ const runAiGeneration = async (requestFn) => {
       return
     }
     htmlContent.value = result.content || ''
+  } catch (error) {
+    emitter.emit(EMITTER_EVENTS.SHOW_TOAST, {
+      variant: 'destructive',
+      description: handleHTTPError(error).message
+    })
+  } finally {
+    isGenerating.value = false
+  }
+}
+
+const { translationLanguage } = useTranslationLanguage()
+const customerLang = computed(() => customerLanguage(conversationStore.conversationMessages))
+const showTranslate = computed(
+  () =>
+    !!translationLanguage.value && !!customerLang.value && customerLang.value !== translationLanguage.value
+)
+// The reply as the agent wrote it before translating, kept so it can be stored with the sent message.
+const translationOriginal = ref(null)
+watch(currentConversationUUID, () => {
+  translationOriginal.value = null
+})
+
+const handleTranslateToCustomer = async () => {
+  if (isGenerating.value || pendingToolApproval.value) return
+  const uuid = currentConversationUUID.value
+  const target = customerLang.value
+  const original = getTextFromHTML(htmlContent.value).trim()
+  if (!uuid || !target || !original) return
+  isGenerating.value = true
+  try {
+    const resp = await api.aiTranslate({ content: htmlContent.value, language: target })
+    if (uuid !== currentConversationUUID.value) return
+    const translated = resp?.data?.data || ''
+    htmlContent.value = translated
+    translationOriginal.value = {
+      conversationUUID: uuid,
+      language: translationLanguage.value,
+      text: original,
+      sentLanguage: target,
+      translatedText: getTextFromHTML(translated)
+    }
   } catch (error) {
     emitter.emit(EMITTER_EVENTS.SHOW_TOAST, {
       variant: 'destructive',
@@ -656,7 +708,11 @@ const processSend = async (
           bcc: parsedBCC,
           to: parsedTo,
           echo_id: isPrivate ? '' : tempUUIDs[i],
-          send_from: isPrivate ? '' : sendFrom.value
+          send_from: isPrivate ? '' : sendFrom.value,
+          translation_original:
+            isPrivate || i > 0
+              ? null
+              : translationOriginalFor(translationOriginal.value, convUUID, getTextFromHTML(part.content))
         })
 
         if (isPrivate && response?.data?.data) {
@@ -702,6 +758,7 @@ const processSend = async (
   // Clear state on success.
   if (!hasMessageSendingErrored) {
     clearDraft(convUUID, isPrivate ? 'private_note' : 'reply')
+    if (!isPrivate) translationOriginal.value = null
     if (isConversationStillOpen()) {
       conversationStore.resetMacro(MACRO_CONTEXT.REPLY)
       clearMediaFiles()

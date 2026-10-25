@@ -14,6 +14,7 @@
           :description="t('admin.ai.embeddingDescription')"
           :show-embedding-fields="true"
         />
+        <TranslationLanguageForm />
       </div>
     </template>
 
@@ -34,6 +35,7 @@
 <script setup>
 import AdminSplitLayout from '@/layouts/admin/AdminSplitLayout.vue'
 import ProviderForm from '@/features/admin/ai/ProviderForm.vue'
+import TranslationLanguageForm from '@/features/admin/ai/TranslationLanguageForm.vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()

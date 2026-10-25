@@ -95,6 +95,22 @@
         </TooltipTrigger>
         <TooltipContent>{{ $t('globals.messages.sendTemplate') }}</TooltipContent>
       </Tooltip>
+      <Tooltip v-if="showTranslate">
+        <TooltipTrigger as-child>
+          <Toggle
+            :class="ICON_BUTTON_CLASS"
+            variant="outline"
+            :pressed="false"
+            :disabled="isGenerating"
+            :aria-label="$t('replyBox.translateToCustomer', { language: translateLanguageLabel })"
+            data-testid="translate-to-customer"
+            @click="emit('translateToCustomer')"
+          >
+            <Languages class="h-4 w-4" />
+          </Toggle>
+        </TooltipTrigger>
+        <TooltipContent>{{ $t('replyBox.translateToCustomer', { language: translateLanguageLabel }) }}</TooltipContent>
+      </Tooltip>
       <Tooltip v-if="showGenerateReply">
         <TooltipTrigger as-child>
           <Toggle
@@ -155,7 +171,7 @@ import { onClickOutside } from '@vueuse/core'
 import { Button } from '@shared-ui/components/ui/button'
 import { Toggle } from '@shared-ui/components/ui/toggle'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@shared-ui/components/ui/tooltip'
-import { Paperclip, Smile, Zap, ChevronDownIcon, Sparkles, Loader2 } from 'lucide-vue-next'
+import { Paperclip, Smile, Zap, ChevronDownIcon, Sparkles, Loader2, Languages } from 'lucide-vue-next'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -180,7 +196,7 @@ const isEmojiPickerVisible = ref(false)
 const emojiPickerPointerOpened = ref(false)
 const emojiPickerRef = ref(null)
 const emojiTriggerRef = ref(null)
-const emit = defineEmits(['emojiSelect', 'generateReply'])
+const emit = defineEmits(['emojiSelect', 'generateReply', 'translateToCustomer'])
 
 const props = defineProps({
   isFullscreen: Boolean,
@@ -198,6 +214,15 @@ const props = defineProps({
   showGenerateReply: {
     type: Boolean,
     default: true
+  },
+  // Shown when the customer writes in another language than the team; translates the reply into it.
+  showTranslate: {
+    type: Boolean,
+    default: false
+  },
+  translateLanguage: {
+    type: String,
+    default: ''
   },
   handleFileUpload: Function,
   handleInlineImageUpload: Function
@@ -229,6 +254,7 @@ const emitter = useEmitter()
 const palette = useCommandPalette()
 
 const attachmentAccept = computed(() => (props.isWhatsApp ? WHATSAPP_MEDIA_ACCEPT : undefined))
+const translateLanguageLabel = computed(() => (props.translateLanguage || '').toUpperCase())
 
 const openMacroPicker = () => {
   palette.openPalette({ parent: MACROS_COMMAND })

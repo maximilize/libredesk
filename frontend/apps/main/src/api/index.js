@@ -503,6 +503,22 @@ const aiCompletion = (data) => http.post('/api/v1/ai/completion', data, {
     'Content-Type': 'application/json'
   }
 })
+const aiTranslate = (data) =>
+  http.post('/api/v1/ai/translate', data, {
+    timeout: AI_TIMEOUT,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+const translateMessage = (conversationUUID, messageUUID, data) =>
+  http.post(`/api/v1/conversations/${conversationUUID}/messages/${messageUUID}/translate`, data, {
+    timeout: AI_TIMEOUT,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+const getTranslationLanguage = () => http.get('/api/v1/ai/translation-language')
+const updateTranslationLanguage = (data) => http.put('/api/v1/ai/translation-language', data)
 const getAIConfig = (type) => http.get(`/api/v1/ai/config/${type}`)
 const updateAIConfig = (type, data) => http.put(`/api/v1/ai/config/${type}`, data)
 const testAIConfig = (type, data) =>
@@ -669,6 +685,10 @@ const deletePushSubscription = (endpoint) => http.delete('/api/v1/notifications/
 const getCampaignStats = (id, params) => http.get(`/api/v1/inboxes/${id}/campaign-stats`, { params })
 
 export default {
+  aiTranslate,
+  translateMessage,
+  getTranslationLanguage,
+  updateTranslationLanguage,
  getCampaignStats,
   login,
   deleteUser,

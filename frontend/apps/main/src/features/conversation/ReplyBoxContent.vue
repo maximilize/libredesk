@@ -210,8 +210,11 @@
       :handleSendAndSetStatus="handleSendAndSetStatus"
       :isGenerating="isGenerating"
       :showGenerateReply="messageType !== 'private_note'"
+      :showTranslate="showTranslate && messageType !== 'private_note'"
+      :translateLanguage="translateLanguage"
       @emojiSelect="handleEmojiSelect"
       @generateReply="$emit('generateReply')"
+      @translateToCustomer="$emit('translateToCustomer')"
     />
   </div>
 </template>
@@ -326,6 +329,14 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  showTranslate: {
+    type: Boolean,
+    default: false
+  },
+  translateLanguage: {
+    type: String,
+    default: ''
+  },
   isSending: {
     type: Boolean,
     required: true
@@ -368,7 +379,8 @@ const emit = defineEmits([
   'fileDelete',
   'filesDropped',
   'aiGenerationChange',
-  'generateReply'
+  'generateReply',
+  'translateToCustomer'
 ])
 
 const conversationStore = useConversationStore()

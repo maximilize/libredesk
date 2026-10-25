@@ -166,6 +166,9 @@
               {{ showQuotedText ? t('conversation.hideQuotedText') : t('conversation.showQuotedText') }}
             </div>
 
+            <!-- Translation into the team language -->
+            <MessageTranslation :message="message" />
+
             <!-- Attachments -->
             <BubbleAttachmentPreview :attachments="nonInlineAttachments" />
 
@@ -306,6 +309,7 @@ import ImageLightbox from '@/components/ImageLightbox.vue'
 import BubbleAttachmentPreview from '@main/features/conversation/message/attachment/BubbleAttachmentPreview.vue'
 import MessageEnvelope from './MessageEnvelope.vue'
 import CSATResponseDisplay from './CSATResponseDisplay.vue'
+import MessageTranslation from './MessageTranslation.vue'
 import api from '@main/api'
 import { containsQuoteMarkers } from '@shared-ui/utils/quotedContent.js'
 import { getMessageDeliveryStatus } from './messageDeliveryStatus.js'
