@@ -237,6 +237,7 @@ import ReplyBoxContent from '@/features/conversation/ReplyBoxContent.vue'
 import { UserTypeAgent } from '@/constants/user'
 import { permissions as perms } from '@main/constants/permissions.js'
 import { useTranslationLanguage } from '@main/composables/useTranslationLanguage'
+import { suggestionTranslationOriginal } from '@main/composables/draftSuggestion'
 import {
   customerLanguage,
   translationOriginalFor
@@ -639,6 +640,9 @@ const processSend = async (
   // Add pending message to cache for instant display.
   if (hasContent) {
     const savedContent = htmlContent.value
+    const suggestionOriginalPayload = isPrivate
+      ? null
+      : suggestionTranslationOriginal(savedContent, draftSuggestion.value)
     const author = {
       id: userStore.userID,
       first_name: userStore.firstName,
@@ -712,7 +716,8 @@ const processSend = async (
           translation_original:
             isPrivate || i > 0
               ? null
-              : translationOriginalFor(translationOriginal.value, convUUID, getTextFromHTML(part.content))
+              : translationOriginalFor(translationOriginal.value, convUUID, getTextFromHTML(part.content)) ||
+                suggestionOriginalPayload
         })
 
         if (isPrivate && response?.data?.data) {

@@ -774,6 +774,7 @@
   "conversation.downloadTranscript": "Download transcript",
   "conversation.draftSuggestion.discard": "Discard",
   "conversation.draftSuggestion.label": "AI suggestion",
+  "conversation.draftSuggestion.original": "Version in {language}",
   "conversation.filters.tooManyGroups": "Too many filter groups. A view can have at most {max}. Remove the extra groups and save again.",
   "conversation.hideQuotedText": "Hide quoted text",
   "conversation.mentions": "Mentions",

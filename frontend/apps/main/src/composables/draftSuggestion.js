@@ -14,3 +14,17 @@ export const isUntouchedSuggestion = (html, suggestion) =>
 
 export const suggestionAuthorName = (suggestion) =>
   [suggestion?.author?.first_name, suggestion?.author?.last_name].filter(Boolean).join(' ')
+
+// The team-language version of an AI suggestion written in the customer's language, if it has one.
+export const suggestionOriginal = (suggestion) => {
+  const o = suggestion?.meta?.translation_original
+  return o?.text && o?.language ? o : null
+}
+
+// suggestionTranslationOriginal returns the translation_original payload for sending an unedited
+// suggestion, so its team-language version is stored with the reply; null otherwise.
+export const suggestionTranslationOriginal = (html, suggestion) => {
+  const o = suggestionOriginal(suggestion)
+  if (!o || !isUntouchedSuggestion(html, suggestion)) return null
+  return { language: o.language, text: o.text, sent_language: suggestion.meta?.language || '' }
+}
