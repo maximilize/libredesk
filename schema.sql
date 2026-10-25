@@ -1122,6 +1122,7 @@ VALUES
 	('app.business_hours_id', '""'::jsonb),
 	('app.show_conversation_subject', 'true'::jsonb),
 	('ai_agent.faq_learning_enabled', 'false'::jsonb),
+	('ai.translation_language', '""'::jsonb),
     ('notification.email.username', '"admin@yourcompany.com"'::jsonb),
     ('notification.email.host', '""'::jsonb),
     ('notification.email.port', '587'::jsonb),

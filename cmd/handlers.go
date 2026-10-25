@@ -81,6 +81,8 @@ func initHandlers(g *fastglue.Fastglue, hub *ws.Hub) {
 	g.POST("/api/v1/conversations/{cuuid}/messages", auth(handleSendMessage))
 	g.PUT("/api/v1/conversations/{cuuid}/messages/{uuid}/retry", perm(handleRetryMessage, "messages:write"))
 	g.DELETE("/api/v1/conversations/{cuuid}/messages/{uuid}", perm(handleDeleteMessage, "messages:write_private"))
+	g.PUT("/api/v1/conversations/{cuuid}/messages/{uuid}/translations", perm(handleSetMessageTranslations, "messages:write_private"))
+	g.POST("/api/v1/conversations/{cuuid}/messages/{uuid}/translate", perm(handleTranslateMessage, "messages:read"))
 	g.POST("/api/v1/conversations", perm(handleCreateConversation, "conversations:write"))
 	g.PUT("/api/v1/conversations/{uuid}/custom-attributes", auth(handleUpdateConversationCustomAttributes))
 	g.PUT("/api/v1/conversations/{uuid}/contacts/custom-attributes", auth(handleUpdateContactCustomAttributes))
@@ -269,6 +271,9 @@ func initHandlers(g *fastglue.Fastglue, hub *ws.Hub) {
 	g.PUT("/api/v1/ai/prompts/{id}", perm(handleUpdateAIPrompt, "ai:manage"))
 	g.DELETE("/api/v1/ai/prompts/{id}", perm(handleDeleteAIPrompt, "ai:manage"))
 	g.POST("/api/v1/ai/completion", auth(handleAICompletion))
+	g.POST("/api/v1/ai/translate", auth(handleAITranslate))
+	g.GET("/api/v1/ai/translation-language", auth(handleGetTranslationLanguage))
+	g.PUT("/api/v1/ai/translation-language", perm(handleUpdateTranslationLanguage, "ai:manage"))
 
 	// AI provider config (completion / embedding).
 	g.GET("/api/v1/ai/config/{type}", perm(handleGetAIConfig, "ai:manage"))

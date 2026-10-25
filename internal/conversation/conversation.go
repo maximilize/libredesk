@@ -404,6 +404,7 @@ type queries struct {
 	UpdateMessageStatus                *sqlx.Stmt `query:"update-message-status"`
 	MarkMessagePendingForRetry         *sqlx.Stmt `query:"mark-message-pending-for-retry"`
 	ClearMessageHandoffFormPending     *sqlx.Stmt `query:"clear-message-handoff-form-pending"`
+	SetMessageTranslations             *sqlx.Stmt `query:"set-message-translations"`
 	UpdateMessageSourceID              *sqlx.Stmt `query:"update-message-source-id"`
 	UpdateMessageSourceIDByUUID        *sqlx.Stmt `query:"update-message-source-id-by-uuid"`
 	ApplyWhatsAppMessageStatus         *sqlx.Stmt `query:"apply-whatsapp-message-status"`

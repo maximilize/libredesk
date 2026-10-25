@@ -675,3 +675,32 @@ func metaString(meta json.RawMessage, key string) string {
 	value, _ := values[key].(string)
 	return value
 }
+
+// Translation sources stored in meta.translations.
+const (
+	TranslationSourceAI       = "ai"
+	TranslationSourceOriginal = "original"
+)
+
+// MessageTranslation is one stored translation of a message, keyed by language code in meta.translations.
+type MessageTranslation struct {
+	Text      string    `json:"text"`
+	From      string    `json:"from,omitempty"`
+	Source    string    `json:"source"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// Translation returns the stored translation of the message into language, if any.
+func (m *Message) Translation(language string) (MessageTranslation, bool) {
+	var meta struct {
+		Translations map[string]MessageTranslation `json:"translations"`
+	}
+	if len(m.Meta) == 0 || json.Unmarshal(m.Meta, &meta) != nil {
+		return MessageTranslation{}, false
+	}
+	t, ok := meta.Translations[language]
+	return t, ok && t.Text != ""
+}
+
+// Language returns the detected language of the message from meta.language, empty when unknown.
+func (m *Message) Language() string { return metaString(m.Meta, "language") }

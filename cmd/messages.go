@@ -26,6 +26,9 @@ type messageReq struct {
 	SourceID    string                 `json:"source_id"` // RFC 5322 Message-ID of the inbound message; stored on the created contact message so replies thread on it. Contact sender only.
 	SendFrom    string                 `json:"send_from"`
 
+	// TranslationOriginal is the reply as the agent wrote it before translating it into the customer's language.
+	TranslationOriginal *translationOriginalReq `json:"translation_original,omitempty"`
+
 	// WhatsApp-only. Set TemplateID to send an approved template. Omit for free-form.
 	WhatsAppTemplateID     int               `json:"whatsapp_template_id,omitempty"`
 	WhatsAppTemplateParams map[string]string `json:"whatsapp_template_params,omitempty"`
@@ -285,6 +288,9 @@ func handleSendMessage(r *fastglue.Request) error {
 	}
 	if len(req.WhatsAppTemplateParams) > 0 {
 		meta["whatsapp_template_params"] = req.WhatsAppTemplateParams
+	}
+	for k, v := range originalTranslationMeta(req.TranslationOriginal) {
+		meta[k] = v
 	}
 	message, err := app.conversation.QueueReply(media, conv.InboxID, user.ID, conv.ContactID, cuuid, req.Message, req.To, req.CC, req.BCC, req.SendFrom, meta)
 	if err != nil {

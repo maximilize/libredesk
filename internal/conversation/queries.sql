@@ -1195,6 +1195,20 @@ UPDATE conversation_messages
 SET meta = meta || '{"handoff_form_pending": false}'::jsonb, updated_at = NOW()
 WHERE uuid = $1 AND COALESCE((meta->>'handoff_form_pending')::boolean, false);
 
+-- name: set-message-translations
+-- Merges translations into meta.translations (other languages and meta keys stay) and records the message language when given.
+UPDATE conversation_messages AS cm
+SET meta = jsonb_set(
+        CASE WHEN $3 = '' THEN COALESCE(cm.meta, '{}'::jsonb)
+             ELSE COALESCE(cm.meta, '{}'::jsonb) || jsonb_build_object('language', $3::text) END,
+        '{translations}',
+        COALESCE(cm.meta->'translations', '{}'::jsonb) || $4::jsonb
+    ),
+    updated_at = NOW()
+FROM conversations c
+WHERE cm.uuid = $1 AND cm.conversation_id = c.id AND c.uuid = $2 AND cm.type != 'activity'
+RETURNING cm.meta;
+
 -- name: get-offline-livechat-conversations
 SELECT
     c.id,
