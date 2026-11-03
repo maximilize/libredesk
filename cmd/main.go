@@ -305,6 +305,7 @@ func main() {
 	go user.MonitorUserAvailability(ctx, onUsersOffline(conversation))
 	go conversation.RunDraftCleaner(ctx, draftRetentionDuration)
 	go conversation.RunMessageTombstoneCleaner(ctx)
+	go conversation.RunRetention(ctx, func() int { return ko.Int("app.conversation_retention_days") })
 	go userNotification.RunNotificationCleaner(ctx)
 	go helpCenter.RunSearchLogCleaner(ctx)
 	if ko.Bool("notification.email.enabled") {
