@@ -10,6 +10,7 @@
   "actions.addCondition": "Add condition",
   "actions.addPrivateNote": "Add private note",
   "actions.addTags": "Add tags",
+  "actions.aiTags": "Add tags with AI",
   "actions.addingPrivateNotes": "Adding private notes",
   "actions.applyMacro": "Apply macro",
   "actions.assignAgent": "Assign agent",

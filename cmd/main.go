@@ -287,6 +287,7 @@ func main() {
 	}
 	automation.SetSystemUserID(systemUser.ID)
 	conversation.SetAIAgent(aiAgent)
+	conversation.SetTagSuggester(ai)
 
 	waClient := initWhatsAppClient()
 	waTemplates := initWhatsAppTemplates(db, i18n, waClient, inbox)

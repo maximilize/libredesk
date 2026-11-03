@@ -406,8 +406,8 @@ const getRulesValidationError = () => {
       return t('admin.automation.validation.selectActionType')
     }
 
-    // CSAT action does not require value, set dummy value.
-    if (action.type === 'send_csat') {
+    // CSAT and AI tags take no value, set a dummy value.
+    if (action.type === 'send_csat' || action.type === 'ai_tags') {
       action.value = ['0']
     }
 

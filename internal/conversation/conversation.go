@@ -128,6 +128,7 @@ type Manager struct {
 	continuityConfig           ContinuityConfig
 	subjectRefFormat           string
 	aiAgent                    AIAgentEngine
+	tagSuggester               TagSuggester
 }
 
 type replyNotificationGroup struct {
@@ -135,6 +136,11 @@ type replyNotificationGroup struct {
 	tmpl       string
 	title      string
 	recipients []umodels.User
+}
+
+// TagSuggester picks the tags that fit a conversation transcript, implemented by the AI manager.
+type TagSuggester interface {
+	SuggestTags(ctx context.Context, transcript string) ([]string, error)
 }
 
 // AIAgentEngine is notified when a conversation assigned to an AI assistant may need a response.
@@ -1590,8 +1596,8 @@ func (m *Manager) ApplySLA(conversation models.Conversation, policyID int, actor
 // ApplyAction applies an action to a conversation, this can be called from multiple packages across the app to perform actions on conversations.
 // all actions are executed on behalf of the provided user if the user is not provided, system user is used.
 func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversation, user umodels.User) error {
-	// CSAT has no value; notify carries its data in dedicated fields.
-	if len(action.Value) == 0 && action.Type != amodels.ActionSendCSAT && action.Type != amodels.ActionNotify {
+	// CSAT and AI tags have no value; notify carries its data in dedicated fields.
+	if len(action.Value) == 0 && action.Type != amodels.ActionSendCSAT && action.Type != amodels.ActionNotify && action.Type != amodels.ActionAITags {
 		m.lo.Warn("empty value for action", "type", action.Type, "conversation_uuid", conv.UUID)
 		return fmt.Errorf("empty value for action %s", action.Type)
 	}
@@ -1675,6 +1681,15 @@ func (m *Manager) ApplyAction(action amodels.RuleAction, conv models.Conversatio
 		return m.ApplySLA(conv, slaID, user)
 	case amodels.ActionAddTags, amodels.ActionSetTags, amodels.ActionRemoveTags:
 		return m.SetConversationTags(conv.UUID, action.Type, action.Value, user)
+	case amodels.ActionAITags:
+		tags, err := m.AITags(context.Background(), conv.UUID)
+		if err != nil {
+			return fmt.Errorf("suggesting tags: %w", err)
+		}
+		if len(tags) == 0 {
+			return nil
+		}
+		return m.SetConversationTags(conv.UUID, amodels.ActionAddTags, tags, user)
 	case amodels.ActionSendCSAT:
 		return m.SendCSATReply(user.ID, conv)
 	case amodels.ActionSnooze:

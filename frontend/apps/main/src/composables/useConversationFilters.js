@@ -341,6 +341,9 @@ export function useConversationFilters () {
             label: t('actions.removeTags'),
             type: FIELD_TYPE.TAG
         },
+        ai_tags: {
+            label: t('actions.aiTags'),
+        },
         notify: {
             label: t('actions.notify'),
             type: FIELD_TYPE.RECIPIENTS

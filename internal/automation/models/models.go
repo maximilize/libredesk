@@ -21,6 +21,7 @@ const (
 	ActionAddTags         = "add_tags"
 	ActionSetTags         = "set_tags"
 	ActionRemoveTags      = "remove_tags"
+	ActionAITags          = "ai_tags"
 	ActionSendCSAT        = "send_csat"
 	ActionNotify          = "notify"
 	ActionSnooze          = "snooze"
@@ -95,6 +96,7 @@ var ActionPermissions = map[string]string{
 	ActionAddTags:         authzModels.PermConversationsUpdateTags,
 	ActionSetTags:         authzModels.PermConversationsUpdateTags,
 	ActionRemoveTags:      authzModels.PermConversationsUpdateTags,
+	ActionAITags:          authzModels.PermConversationsUpdateTags,
 	ActionSnooze:          authzModels.PermConversationsUpdateStatus,
 }
 
