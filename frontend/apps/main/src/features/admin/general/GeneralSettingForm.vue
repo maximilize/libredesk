@@ -181,6 +181,46 @@
             <FormMessage />
           </FormItem>
         </FormField>
+        <FormField name="conversation_retention_tags" v-slot="{ componentField, handleChange }">
+          <FormItem>
+            <FormLabel>
+              {{ t('admin.general.conversationRetentionTags') }}
+            </FormLabel>
+            <FormControl>
+              <TagsInput :modelValue="componentField.modelValue" @update:modelValue="handleChange">
+                <TagsInputItem v-for="item in componentField.modelValue" :key="item" :value="item">
+                  <TagsInputItemText />
+                  <TagsInputItemDelete />
+                </TagsInputItem>
+                <TagsInputInput
+                  :placeholder="t('admin.general.conversationRetentionTags.placeholder')"
+                />
+              </TagsInput>
+            </FormControl>
+            <FormDescription>
+              {{ t('admin.general.conversationRetentionTags.description') }}
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        </FormField>
+        <FormField
+          v-slot="{ field }"
+          name="conversation_retention_tagged_days"
+          :value="props.initialValues.conversation_retention_tagged_days"
+        >
+          <FormItem>
+            <FormLabel>
+              {{ t('admin.general.conversationRetentionTaggedDays') }}
+            </FormLabel>
+            <FormControl>
+              <Input type="number" placeholder="0" v-bind="field" />
+            </FormControl>
+            <FormDescription>
+              {{ t('admin.general.conversationRetentionTaggedDays.description') }}
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        </FormField>
         <FormField name="allowed_file_upload_extensions" v-slot="{ componentField, handleChange }">
           <FormItem>
             <FormLabel>

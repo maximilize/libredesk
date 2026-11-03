@@ -38,6 +38,15 @@ describe('General Form Schema', () => {
         expect(() => schema.parse({ ...validForm, conversation_retention_days: 3651 })).toThrow()
     })
 
+    test('conversation retention tags', () => {
+        const parsed = schema.parse(validForm)
+        expect(parsed.conversation_retention_tags).toEqual([])
+        expect(parsed.conversation_retention_tagged_days).toBe(0)
+        expect(() => schema.parse({ ...validForm, conversation_retention_tags: ['payment'], conversation_retention_tagged_days: 3650 })).not.toThrow()
+        expect(() => schema.parse({ ...validForm, conversation_retention_tagged_days: -1 })).toThrow()
+        expect(() => schema.parse({ ...validForm, conversation_retention_tagged_days: 3651 })).toThrow()
+    })
+
     test('site_name missing', () => {
         const { site_name, ...form } = validForm
         expect(() => schema.parse(form)).toThrow()

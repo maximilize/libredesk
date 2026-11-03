@@ -379,10 +379,11 @@ func main() {
 	go whatsappTemplateSyncWorker(ctx, app)
 
 	// Settings reloads replace ko under app's lock, so the retention period is read under it too.
-	go conversation.RunRetention(ctx, func() (int, bool) {
+	go conversation.RunRetention(ctx, func() (int, bool, []string, int) {
 		app.Lock()
 		defer app.Unlock()
-		return ko.Int("app.conversation_retention_days"), ko.Bool("app.conversation_retention_delete_contacts")
+		return ko.Int("app.conversation_retention_days"), ko.Bool("app.conversation_retention_delete_contacts"),
+			ko.Strings("app.conversation_retention_tags"), ko.Int("app.conversation_retention_tagged_days")
 	})
 
 	g := fastglue.NewGlue()

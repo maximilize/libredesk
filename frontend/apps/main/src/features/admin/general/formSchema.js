@@ -56,5 +56,21 @@ export const createFormSchema = (t) => z.object({
     .optional()
     .default(0),
   conversation_retention_delete_contacts: z.boolean().optional(),
+  conversation_retention_tags: z.array(z.string()).nullable().optional().default([]),
+  conversation_retention_tagged_days: z
+    .number({
+      required_error: t('globals.messages.required')
+    })
+    .int({
+      message: t('admin.general.conversationRetentionTaggedDays.valid')
+    })
+    .min(0, {
+      message: t('admin.general.conversationRetentionTaggedDays.valid')
+    })
+    .max(3650, {
+      message: t('admin.general.conversationRetentionTaggedDays.valid')
+    })
+    .optional()
+    .default(0),
   show_conversation_subject: z.boolean().optional()
 })

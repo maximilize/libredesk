@@ -600,11 +600,21 @@ WHERE uuid = $1;
 
 -- name: get-expired-conversations
 -- Resolved conversations whose last message and last status change lie more than $1 days back, at most $2.
+-- Conversations carrying one of the tags in $3 use $4 days instead, and stay when $4 is 0.
 SELECT c.id
 FROM conversations c
 JOIN conversation_statuses s ON s.id = c.status_id
+LEFT JOIN LATERAL (
+    SELECT TRUE AS yes
+    FROM conversation_tags ct
+    JOIN tags t ON t.id = ct.tag_id
+    WHERE ct.conversation_id = c.id AND t.name = ANY($3::TEXT[])
+    LIMIT 1
+) tagged ON TRUE
 WHERE s.category = 'resolved'
-  AND GREATEST(c.created_at, COALESCE(c.last_message_at, c.created_at), COALESCE(c.last_resolved_at, c.created_at)) < NOW() - make_interval(days => $1)
+  AND (tagged.yes IS NULL OR $4 > 0)
+  AND GREATEST(c.created_at, COALESCE(c.last_message_at, c.created_at), COALESCE(c.last_resolved_at, c.created_at))
+      < NOW() - make_interval(days => CASE WHEN tagged.yes IS NULL THEN $1 ELSE $4 END)
 ORDER BY c.id
 LIMIT $2;
 

@@ -15,6 +15,10 @@ type General struct {
 	ConversationRetentionDays int `json:"app.conversation_retention_days"`
 	// ConversationRetentionDeleteContacts also deletes a contact once retention removed their last conversation.
 	ConversationRetentionDeleteContacts bool `json:"app.conversation_retention_delete_contacts"`
+	// ConversationRetentionTags lists tags whose conversations are kept for ConversationRetentionTaggedDays instead,
+	// e.g. payment matters that must stay on file longer; 0 keeps them.
+	ConversationRetentionTags       []string `json:"app.conversation_retention_tags"`
+	ConversationRetentionTaggedDays int      `json:"app.conversation_retention_tagged_days"`
 }
 
 type EmailNotification struct {

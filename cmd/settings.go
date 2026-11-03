@@ -41,6 +41,21 @@ func handleGetGeneralSettings(r *fastglue.Request) error {
 // maxConversationRetentionDays caps the retention setting at ten years; 0 turns retention off.
 const maxConversationRetentionDays = 3650
 
+// cleanTagNames trims the names, drops empty ones and duplicates, keeping the order.
+func cleanTagNames(names []string) []string {
+	out := make([]string, 0, len(names))
+	seen := map[string]bool{}
+	for _, n := range names {
+		n = strings.TrimSpace(n)
+		if n == "" || seen[n] {
+			continue
+		}
+		seen[n] = true
+		out = append(out, n)
+	}
+	return out
+}
+
 func handleUpdateGeneralSettings(r *fastglue.Request) error {
 	var (
 		app = r.Context.(*App)
@@ -67,6 +82,10 @@ func handleUpdateGeneralSettings(r *fastglue.Request) error {
 	if req.ConversationRetentionDays < 0 || req.ConversationRetentionDays > maxConversationRetentionDays {
 		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.conversationRetentionDays.valid"), nil, envelope.InputError)
 	}
+	if req.ConversationRetentionTaggedDays < 0 || req.ConversationRetentionTaggedDays > maxConversationRetentionDays {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.conversationRetentionTaggedDays.valid"), nil, envelope.InputError)
+	}
+	req.ConversationRetentionTags = cleanTagNames(req.ConversationRetentionTags)
 
 	app.Lock()
 	oldLang := ko.String("app.lang")

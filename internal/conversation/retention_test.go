@@ -41,6 +41,13 @@ func TestDeleteExpiredConversations(t *testing.T) {
 	insert := func(status, createdAgo, lastMessageAgo, lastResolvedAgo string) int {
 		return insertFor(contactID, status, createdAgo, lastMessageAgo, lastResolvedAgo)
 	}
+	exists := func(table string, id int) bool {
+		var found bool
+		if err := db.Get(&found, `SELECT EXISTS (SELECT 1 FROM `+table+` WHERE id = $1)`, id); err != nil {
+			t.Fatal(err)
+		}
+		return found
+	}
 	// A contact whose only conversation expires goes with it, the main contact keeps their open conversation.
 	lonelyContact := newContact("lonely@example.com")
 	lonelyExpired := insertFor(lonelyContact, "Closed", "90 days", "60 days", "45 days")
@@ -57,6 +64,14 @@ func TestDeleteExpiredConversations(t *testing.T) {
 	recentlyResolved := insert("Resolved", "90 days", "60 days", "10 days")
 	newMessageSince := insert("Closed", "90 days", "5 days", "45 days")
 	openOld := insert("Open", "90 days", "60 days", "60 days")
+	taggedExpired := insert("Closed", "90 days", "60 days", "45 days")
+	var tagID int
+	if err := db.Get(&tagID, `INSERT INTO tags (name) VALUES ('payment') RETURNING id`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO conversation_tags (tag_id, conversation_id) VALUES ($1, $2)`, tagID, taggedExpired); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := db.Exec(`INSERT INTO conversation_messages (type, status, conversation_id, sender_id, sender_type, content, created_at) VALUES ('incoming', 'received', $1, $2, 'contact', 'Me too', NOW() - '60 days'::interval)`, openOld, writerContact); err != nil {
 		t.Fatal(err)
 	}
@@ -67,7 +82,8 @@ func TestDeleteExpiredConversations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	deleted, deletedContacts, err := m.DeleteExpiredConversations(context.Background(), 30, true)
+	// The tagged conversation is kept while its own period is 0.
+	deleted, deletedContacts, err := m.DeleteExpiredConversations(context.Background(), RetentionPolicy{Days: 30, DeleteContacts: true, Tags: []string{"payment"}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +99,7 @@ func TestDeleteExpiredConversations(t *testing.T) {
 			t.Errorf("contact %d exists = %v, want %v", id, exists, want)
 		}
 	}
-	for id, want := range map[int]bool{lonelyExpired: false, writerExpired: false, expiredClosed: false, expiredResolved: false, messageInFlight: true, recentlyResolved: true, newMessageSince: true, openOld: true} {
+	for id, want := range map[int]bool{lonelyExpired: false, writerExpired: false, expiredClosed: false, expiredResolved: false, messageInFlight: true, recentlyResolved: true, newMessageSince: true, openOld: true, taggedExpired: true} {
 		var exists bool
 		if err := db.Get(&exists, `SELECT EXISTS (SELECT 1 FROM conversations WHERE id = $1)`, id); err != nil {
 			t.Fatal(err)
@@ -100,22 +116,22 @@ func TestDeleteExpiredConversations(t *testing.T) {
 		t.Fatalf("messages of deleted conversations = %d, want 0", messages)
 	}
 
-	// A second run finds nothing left.
-	if deleted, _, err := m.DeleteExpiredConversations(context.Background(), 30, true); err != nil || deleted != 0 {
+	// A second run finds nothing left; the tagged conversation also waits while its period hasn't passed.
+	if deleted, _, err := m.DeleteExpiredConversations(context.Background(), RetentionPolicy{Days: 30, DeleteContacts: true, Tags: []string{"payment"}, TaggedDays: 3650}); err != nil || deleted != 0 {
 		t.Fatalf("second run = %d, %v; want 0, nil", deleted, err)
+	}
+	// Once the tagged period has passed too, the tagged conversation goes.
+	if deleted, _, err := m.DeleteExpiredConversations(context.Background(), RetentionPolicy{Days: 30, Tags: []string{"payment"}, TaggedDays: 40}); err != nil || deleted != 1 || exists("conversations", taggedExpired) {
+		t.Fatalf("tagged run = %d, %v; want 1, nil and the tagged conversation gone", deleted, err)
 	}
 
 	// Without the contact option the conversation goes and the contact stays.
 	keptContact := newContact("kept@example.com")
 	insertFor(keptContact, "Closed", "90 days", "60 days", "45 days")
-	if deleted, deletedContacts, err := m.DeleteExpiredConversations(context.Background(), 30, false); err != nil || deleted != 1 || deletedContacts != 0 {
+	if deleted, deletedContacts, err := m.DeleteExpiredConversations(context.Background(), RetentionPolicy{Days: 30}); err != nil || deleted != 1 || deletedContacts != 0 {
 		t.Fatalf("run without contacts = %d, %d, %v; want 1, 0, nil", deleted, deletedContacts, err)
 	}
-	var exists bool
-	if err := db.Get(&exists, `SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)`, keptContact); err != nil {
-		t.Fatal(err)
-	}
-	if !exists {
+	if !exists("users", keptContact) {
 		t.Fatal("contact deleted although the option is off")
 	}
 }
