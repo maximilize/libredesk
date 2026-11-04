@@ -342,6 +342,7 @@ const getConversationMessage = (cuuid, uuid) =>
   http.get(`/api/v1/conversations/${cuuid}/messages/${uuid}`)
 const retryMessage = (cuuid, uuid) =>
   http.put(`/api/v1/conversations/${cuuid}/messages/${uuid}/retry`)
+const deleteConversation = (uuid) => http.delete(`/api/v1/conversations/${uuid}`)
 const deleteMessage = (cuuid, uuid) =>
   http.delete(`/api/v1/conversations/${cuuid}/messages/${uuid}`)
 const getConversationMessages = (uuid, params) =>
@@ -753,6 +754,7 @@ export default {
   createConversation,
   sendMessage,
   retryMessage,
+  deleteConversation,
   deleteMessage,
   createUser,
   createInbox,

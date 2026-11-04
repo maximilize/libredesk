@@ -100,6 +100,37 @@
       </DropdownMenuContent>
     </DropdownMenu>
 
+    <!-- Delete -->
+    <AlertDialog v-if="canDelete">
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          :disabled="bulkLoading"
+          :title="t('conversation.bulkActions.delete')"
+          :aria-label="t('conversation.bulkActions.delete')"
+        >
+          <Trash2 class="w-4 h-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ t('conversation.bulkActions.delete') }}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {{
+              t('conversation.bulkActions.deleteConfirmation', {
+                count: conversationStore.selectedCount
+              })
+            }}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{{ t('globals.messages.cancel') }}</AlertDialogCancel>
+          <AlertDialogAction @click="bulkDelete">{{ t('globals.messages.delete') }}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
     <Loader2 v-if="bulkLoading" class="w-4 h-4 animate-spin text-muted-foreground ml-2" />
 
     <Button
@@ -116,9 +147,20 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n'
-import { UserPlus, Users, Tag, CircleDot, Loader2, X } from 'lucide-vue-next'
+import { UserPlus, Users, Tag, CircleDot, Loader2, X, Trash2 } from 'lucide-vue-next'
 import { Button } from '@shared-ui/components/ui/button'
 import { Checkbox } from '@shared-ui/components/ui/checkbox'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from '@shared-ui/components/ui/alert-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -134,9 +176,10 @@ import { useBulkActions } from '@/composables/useBulkActions'
 
 const conversationStore = useConversationStore()
 const { t } = useI18n()
-const { bulkLoading, bulkAssign, bulkAddTag, bulkUpdateStatus } = useBulkActions()
+const { bulkLoading, bulkAssign, bulkAddTag, bulkUpdateStatus, bulkDelete } = useBulkActions()
 
-const { canAssignAgent, canAssignTeam, canUpdateStatus, canUpdateTags } = useBulkActionPermissions()
+const { canAssignAgent, canAssignTeam, canUpdateStatus, canUpdateTags, canDelete } =
+  useBulkActionPermissions()
 
 const toggleSelectAll = () => {
   if (conversationStore.allSelected) {

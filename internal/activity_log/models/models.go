@@ -14,6 +14,7 @@ const (
 	AgentRolePermissionsChanged = "agent_role_permissions_changed"
 	ContactDeleted              = "contact_deleted"
 	ContactDataExported         = "contact_data_exported"
+	ConversationDeleted         = "conversation_deleted"
 )
 
 type ActivityLog struct {

@@ -293,6 +293,23 @@ func (al *Manager) ContactDataExported(actorID int, actorEmail, ip string, conta
 	)
 }
 
+// ConversationDeleted records that an agent permanently deleted a conversation.
+func (al *Manager) ConversationDeleted(actorID int, actorEmail, ip string, conversationID int, referenceNumber string) error {
+	description := al.i18n.Ts("activityLog.conversationDeleted",
+		"actorEmail", actorEmail,
+		"actorId", fmt.Sprintf("#%d", actorID),
+		"referenceNumber", referenceNumber,
+		"conversationId", fmt.Sprintf("#%d", conversationID))
+	return al.create(
+		models.ConversationDeleted,
+		description,
+		actorID,
+		"conversation",
+		conversationID,
+		ip,
+	)
+}
+
 // create creates a new activity log in DB.
 func (m *Manager) create(activityType, activityDescription string, actorID int, targetModelType string, targetModelID int, ip string) error {
 	if _, err := m.q.InsertActivity.Exec(activityType, activityDescription, actorID, targetModelType, targetModelID, ip); err != nil {

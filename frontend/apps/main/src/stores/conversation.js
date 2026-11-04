@@ -1152,6 +1152,20 @@ export const useConversationStore = defineStore('conversation', () => {
     })
   }
 
+  // removeConversation drops a deleted conversation from the list, the selection and the message cache,
+  // so it neither shows up nor opens again until the next fetch confirms it is gone.
+  function removeConversation (uuid) {
+    conversations.data = conversations.data.filter(c => c.uuid !== uuid)
+    if (selectedUUIDs.value.has(uuid)) {
+      const next = new Set(selectedUUIDs.value)
+      next.delete(uuid)
+      selectedUUIDs.value = next
+    }
+    messages.data.purgeConversation(uuid)
+    messages.version++
+    if (conversation.data?.uuid === uuid) conversation.data = null
+  }
+
   function resetConversations () {
     conversations.data = []
     conversations.page = 1
@@ -1310,6 +1324,7 @@ export const useConversationStore = defineStore('conversation', () => {
     macros,
     conversations,
     conversation,
+    removeConversation,
     messages,
     conversationsList,
     conversationMessages,

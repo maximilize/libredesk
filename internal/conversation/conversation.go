@@ -398,6 +398,8 @@ type queries struct {
 	GetEmailSenderMessage              *sqlx.Stmt `query:"get-email-sender-message"`
 	GetConversationUUIDFromMessageUUID *sqlx.Stmt `query:"get-conversation-uuid-from-message-uuid"`
 	MessageExistsBySourceID            *sqlx.Stmt `query:"message-exists-by-source-id"`
+	MessageSourceIDDeleted             *sqlx.Stmt `query:"message-source-id-deleted"`
+	DeleteOldMessageTombstones         *sqlx.Stmt `query:"delete-old-message-tombstones"`
 	GetConversationByMessageID         *sqlx.Stmt `query:"get-conversation-by-message-id"`
 	InsertMessage                      *sqlx.Stmt `query:"insert-message"`
 	UpdateMessageStatus                *sqlx.Stmt `query:"update-message-status"`

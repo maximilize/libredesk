@@ -304,6 +304,7 @@ func main() {
 	go media.DeleteUnlinkedMedia(ctx)
 	go user.MonitorUserAvailability(ctx, onUsersOffline(conversation))
 	go conversation.RunDraftCleaner(ctx, draftRetentionDuration)
+	go conversation.RunMessageTombstoneCleaner(ctx)
 	go userNotification.RunNotificationCleaner(ctx)
 	go helpCenter.RunSearchLogCleaner(ctx)
 	if ko.Bool("notification.email.enabled") {

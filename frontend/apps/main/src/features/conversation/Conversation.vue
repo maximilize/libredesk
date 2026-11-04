@@ -93,10 +93,42 @@
             >
               {{ t('conversation.summarize') }}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              v-if="userStore.can(perms.CONVERSATIONS_DELETE)"
+              class="text-destructive"
+              @click="openDeleteDialog"
+            >
+              {{ t('conversation.delete') }}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
     </div>
+
+    <AlertDialog :open="showDeleteDialog" @update:open="showDeleteDialog = $event">
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{{ t('conversation.delete') }}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {{
+              t('conversation.deleteConfirmation', {
+                referenceNumber: conversationStore.current?.reference_number
+              })
+            }}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Input
+          v-model="deleteConfirmation"
+          :placeholder="t('conversation.deleteConfirmationPlaceholder')"
+        />
+        <AlertDialogFooter>
+          <AlertDialogCancel>{{ t('globals.messages.cancel') }}</AlertDialogCancel>
+          <AlertDialogAction :disabled="!deleteConfirmed || isDeleting" @click="deleteConversation">
+            {{ t('globals.messages.delete') }}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
 
     <!-- Messages & reply box -->
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -126,6 +158,17 @@ import {
   DropdownMenuTrigger
 } from '@shared-ui/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@shared-ui/components/ui/tooltip'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@shared-ui/components/ui/alert-dialog'
+import { Input } from '@shared-ui/components/ui/input'
 import { formatMessageTimestamp } from '@shared-ui/utils/datetime.js'
 import { Button } from '@shared-ui/components/ui/button'
 import MessageList from '@/features/conversation/message/MessageList.vue'
@@ -196,6 +239,40 @@ const downloadTranscript = async (format = 'txt') => {
 const isWhatsAppChannel = computed(
   () => conversationStore.current?.inbox_channel === WHATSAPP_CHANNEL
 )
+
+// Deleting is final, so the agent types the reference number before the button enables.
+const showDeleteDialog = ref(false)
+const deleteConfirmation = ref('')
+const isDeleting = ref(false)
+const deleteConfirmed = computed(
+  () =>
+    deleteConfirmation.value.trim().replace(/^#/, '') ===
+    String(conversationStore.current?.reference_number ?? '')
+)
+const openDeleteDialog = () => {
+  deleteConfirmation.value = ''
+  showDeleteDialog.value = true
+}
+const deleteConversation = async () => {
+  const conversation = conversationStore.current
+  if (!conversation || !deleteConfirmed.value) return
+  isDeleting.value = true
+  try {
+    await api.deleteConversation(conversation.uuid)
+    showDeleteDialog.value = false
+    emitter.emit(EMITTER_EVENTS.SHOW_TOAST, { description: t('conversation.deleted') })
+    goBackToList()
+    conversationStore.removeConversation(conversation.uuid)
+    conversationStore.fetchSidebarCounts({ force: true })
+  } catch (error) {
+    emitter.emit(EMITTER_EVENTS.SHOW_TOAST, {
+      variant: 'destructive',
+      description: handleHTTPError(error).message
+    })
+  } finally {
+    isDeleting.value = false
+  }
+}
 
 const isSummarizing = ref(false)
 

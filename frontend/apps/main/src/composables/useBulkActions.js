@@ -54,5 +54,11 @@ export function useBulkActions() {
   const bulkUpdateStatus = (status) =>
     runBulkAction((uuid) => api.updateConversationStatus(uuid, { status }))
 
-  return { bulkLoading, runBulkAction, bulkAssign, bulkAddTag, bulkUpdateStatus }
+  const bulkDelete = () =>
+    runBulkAction(async (uuid) => {
+      await api.deleteConversation(uuid)
+      conversationStore.removeConversation(uuid)
+    })
+
+  return { bulkLoading, runBulkAction, bulkAssign, bulkAddTag, bulkUpdateStatus, bulkDelete }
 }

@@ -1244,12 +1244,18 @@ func (m *Manager) ProcessIncomingWhatsAppMessage(msg models.Message, isNewConver
 	return msg, nil
 }
 
-// MessageExists checks if a message with the given messageID exists.
+// MessageExists checks if a message with the given messageID exists, or existed and was deleted: a deleted
+// mail is still on the server and must not come back as a new conversation.
 func (m *Manager) MessageExists(messageID string) (bool, error) {
 	_, err := m.messageExistsBySourceID([]string{messageID})
 	if err != nil {
 		if errors.Is(err, errConversationNotFound) {
-			return false, nil
+			var deleted bool
+			if err := m.q.MessageSourceIDDeleted.Get(&deleted, pq.Array([]string{messageID})); err != nil {
+				m.lo.Error("error checking deleted message ids", "error", err)
+				return false, err
+			}
+			return deleted, nil
 		}
 		m.lo.Error("error fetching message from db", "error", err)
 		return false, err

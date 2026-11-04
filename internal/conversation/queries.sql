@@ -826,7 +826,22 @@ JOIN conversations c ON m.conversation_id = c.id
 WHERE m.id = $1;
 
 -- name: delete-conversation
+-- Remembers the Message-IDs of the deleted messages, so the IMAP scan doesn't import the mails again.
+WITH tombstones AS (
+    INSERT INTO deleted_message_source_ids (source_id)
+    SELECT m.source_id
+    FROM conversation_messages m
+    JOIN conversations c ON c.id = m.conversation_id
+    WHERE c.uuid = $1 AND COALESCE(m.source_id, '') <> ''
+    ON CONFLICT (source_id) DO UPDATE SET deleted_at = NOW()
+)
 DELETE FROM conversations WHERE uuid = $1;
+
+-- name: message-source-id-deleted
+SELECT EXISTS (SELECT 1 FROM deleted_message_source_ids WHERE source_id = ANY($1::TEXT[]));
+
+-- name: delete-old-message-tombstones
+DELETE FROM deleted_message_source_ids WHERE deleted_at < NOW() - INTERVAL '90 days';
 
 -- MESSAGE queries.
 -- name: delete-message

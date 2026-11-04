@@ -21,6 +21,7 @@ import (
 	umodels "github.com/abhinavxd/libredesk/internal/user/models"
 	vmodels "github.com/abhinavxd/libredesk/internal/view/models"
 	wmodels "github.com/abhinavxd/libredesk/internal/webhook/models"
+	realip "github.com/ferluci/fast-realip"
 	"github.com/valyala/fasthttp"
 	"github.com/volatiletech/null/v9"
 	"github.com/zerodha/fastglue"
@@ -647,6 +648,32 @@ func handleUpdateConversationPriority(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 
+	return r.SendEnvelope(true)
+}
+
+// handleDeleteConversation permanently deletes a conversation with its messages; attachments go with the
+// unlinked-media sweep. The deletion is recorded in the activity log.
+func handleDeleteConversation(r *fastglue.Request) error {
+	var (
+		app   = r.Context.(*App)
+		uuid  = r.RequestCtx.UserValue("uuid").(string)
+		auser = r.RequestCtx.UserValue("user").(amodels.User)
+	)
+	user, err := app.user.GetAgentCachedOrLoad(auser.ID)
+	if err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+	conversation, err := enforceConversationAccess(app, uuid, user)
+	if err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+	app.lo.Info("deleting conversation", "conversation_uuid", uuid, "reference_number", conversation.ReferenceNumber, "actor_id", auser.ID)
+	if err := app.conversation.DeleteConversation(uuid); err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+	if err := app.activityLog.ConversationDeleted(auser.ID, auser.Email, realip.FromRequest(r.RequestCtx), conversation.ID, conversation.ReferenceNumber); err != nil {
+		app.lo.Error("error creating conversation deleted activity log", "error", err)
+	}
 	return r.SendEnvelope(true)
 }
 
