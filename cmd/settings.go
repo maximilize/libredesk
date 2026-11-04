@@ -3,7 +3,10 @@ package main
 import (
 	"encoding/json"
 	"net/mail"
+	"strconv"
 	"strings"
+
+	"github.com/abhinavxd/libredesk/internal/conversation"
 
 	"github.com/abhinavxd/libredesk/internal/envelope"
 	"github.com/abhinavxd/libredesk/internal/httputil"
@@ -38,8 +41,27 @@ func handleGetGeneralSettings(r *fastglue.Request) error {
 }
 
 // handleUpdateGeneralSettings updates general settings.
-// maxConversationRetentionDays caps the retention setting at ten years; 0 turns retention off.
-const maxConversationRetentionDays = 3650
+// Retention periods are 0 (off) or between minConversationRetentionDays and maxConversationRetentionDays,
+// so a typo like 1 or 7 can't wipe recent conversations.
+const (
+	minConversationRetentionDays = 30
+	maxConversationRetentionDays = 3650
+)
+
+// retentionEnabled reports whether scheduled deletion is switched on in config.toml.
+func retentionEnabled() bool {
+	return ko.Bool("conversation.retention_enabled")
+}
+
+// validRetentionPeriod accepts 0 or a value within the allowed range.
+func validRetentionPeriod(days int) bool {
+	return days == 0 || (days >= minConversationRetentionDays && days <= maxConversationRetentionDays)
+}
+
+// retentionRequested reports whether the settings ask for any scheduled deletion.
+func retentionRequested(req models.General) bool {
+	return req.ConversationRetentionDays != 0 || req.ConversationRetentionTaggedDays != 0 || len(req.ConversationRetentionTags) != 0 || req.ConversationRetentionDeleteContacts
+}
 
 // cleanTagNames trims the names, drops empty ones and duplicates, keeping the order.
 func cleanTagNames(names []string) []string {
@@ -79,13 +101,16 @@ func handleUpdateGeneralSettings(r *fastglue.Request) error {
 	if !httputil.IsValidHTTPURL(req.RootURL) {
 		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.rootURL.valid"), nil, envelope.InputError)
 	}
-	if req.ConversationRetentionDays < 0 || req.ConversationRetentionDays > maxConversationRetentionDays {
+	req.ConversationRetentionTags = cleanTagNames(req.ConversationRetentionTags)
+	if !retentionEnabled() && retentionRequested(req) {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.conversationRetention.disabled"), nil, envelope.InputError)
+	}
+	if !validRetentionPeriod(req.ConversationRetentionDays) {
 		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.conversationRetentionDays.valid"), nil, envelope.InputError)
 	}
-	if req.ConversationRetentionTaggedDays < 0 || req.ConversationRetentionTaggedDays > maxConversationRetentionDays {
+	if !validRetentionPeriod(req.ConversationRetentionTaggedDays) {
 		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.conversationRetentionTaggedDays.valid"), nil, envelope.InputError)
 	}
-	req.ConversationRetentionTags = cleanTagNames(req.ConversationRetentionTags)
 
 	app.Lock()
 	oldLang := ko.String("app.lang")
@@ -196,4 +221,28 @@ func handleUpdateEmailNotificationSettings(r *fastglue.Request) error {
 	app.Unlock()
 
 	return r.SendEnvelope(true)
+}
+
+// handleGetRetentionPreview returns how many resolved conversations the given retention values would delete
+// right now, so an admin sees the effect before saving. Query: days, tagged_days, tags (comma separated).
+func handleGetRetentionPreview(r *fastglue.Request) error {
+	var app = r.Context.(*App)
+	if !retentionEnabled() {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.conversationRetention.disabled"), nil, envelope.InputError)
+	}
+	args := r.RequestCtx.QueryArgs()
+	days, _ := strconv.Atoi(string(args.Peek("days")))
+	taggedDays, _ := strconv.Atoi(string(args.Peek("tagged_days")))
+	if !validRetentionPeriod(days) || !validRetentionPeriod(taggedDays) {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("admin.general.conversationRetentionDays.valid"), nil, envelope.InputError)
+	}
+	policy := conversation.RetentionPolicy{Days: days, TaggedDays: taggedDays, Tags: cleanTagNames(strings.Split(string(args.Peek("tags")), ","))}
+	count := 0
+	if policy.Days > 0 {
+		var err error
+		if count, err = app.conversation.CountExpiredConversations(r.RequestCtx, policy); err != nil {
+			return sendErrorEnvelope(r, err)
+		}
+	}
+	return r.SendEnvelope(map[string]int{"count": count})
 }

@@ -82,8 +82,26 @@ func TestDeleteExpiredConversations(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	policy := RetentionPolicy{Days: 30, DeleteContacts: true, Tags: []string{"payment"}}
+	// The preview counts what a run would delete, without touching anything.
+	if count, err := m.CountExpiredConversations(context.Background(), policy); err != nil || count != 4 {
+		t.Fatalf("count = %d, %v; want 4, nil", count, err)
+	}
+	// The first run with a policy is a dry run; it logs and deletes nothing.
+	var runner retentionRunner
+	runner.tick(context.Background(), m, policy)
+	if count, err := m.CountExpiredConversations(context.Background(), policy); err != nil || count != 4 {
+		t.Fatalf("count after dry run = %d, %v; want 4, nil", count, err)
+	}
+	// Retention switched off resets the runner, so the next policy gets a dry run again.
+	runner.tick(context.Background(), m, RetentionPolicy{})
+	runner.tick(context.Background(), m, policy)
+	if count, err := m.CountExpiredConversations(context.Background(), policy); err != nil || count != 4 {
+		t.Fatalf("count after second dry run = %d, %v; want 4, nil", count, err)
+	}
+
 	// The tagged conversation is kept while its own period is 0.
-	deleted, deletedContacts, err := m.DeleteExpiredConversations(context.Background(), RetentionPolicy{Days: 30, DeleteContacts: true, Tags: []string{"payment"}})
+	deleted, deletedContacts, err := m.DeleteExpiredConversations(context.Background(), policy)
 	if err != nil {
 		t.Fatal(err)
 	}

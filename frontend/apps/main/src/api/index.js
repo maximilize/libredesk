@@ -135,6 +135,7 @@ const createOIDC = (data) =>
     }
   })
 const getConfig = () => http.get('/api/v1/config')
+const getRetentionPreview = (params) => http.get('/api/v1/settings/retention/preview', { params })
 const getAllOIDC = () => http.get('/api/v1/oidc')
 const getOIDC = (id) => http.get(`/api/v1/oidc/${id}`)
 const updateOIDC = (id, data) =>
@@ -776,6 +777,7 @@ export default {
   createOIDC,
   getAllOIDC,
   getConfig,
+  getRetentionPreview,
   getOIDC,
   updateOIDC,
   deleteOIDC,

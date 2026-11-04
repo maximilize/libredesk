@@ -618,6 +618,25 @@ WHERE s.category = 'resolved'
 ORDER BY c.id
 LIMIT $2;
 
+-- name: count-expired-conversations
+-- How many conversations a run would delete right now: the candidates of get-expired-conversations without
+-- its limit, minus those with a message younger than $1 days, as delete-expired-conversations skips them.
+SELECT COUNT(*)
+FROM conversations c
+JOIN conversation_statuses s ON s.id = c.status_id
+LEFT JOIN LATERAL (
+    SELECT TRUE AS yes
+    FROM conversation_tags ct
+    JOIN tags t ON t.id = ct.tag_id
+    WHERE ct.conversation_id = c.id AND t.name = ANY($2::TEXT[])
+    LIMIT 1
+) tagged ON TRUE
+WHERE s.category = 'resolved'
+  AND (tagged.yes IS NULL OR $3 > 0)
+  AND GREATEST(c.created_at, COALESCE(c.last_message_at, c.created_at), COALESCE(c.last_resolved_at, c.created_at))
+      < NOW() - make_interval(days => CASE WHEN tagged.yes IS NULL THEN $1 ELSE $3 END)
+  AND NOT EXISTS (SELECT 1 FROM conversation_messages m WHERE m.conversation_id = c.id AND m.created_at >= NOW() - make_interval(days => $1));
+
 -- name: lock-conversations
 -- Locks the given conversations for the rest of the transaction, so a message being inserted into one of
 -- them (which holds a key-share lock on its row) commits before the delete looks again.

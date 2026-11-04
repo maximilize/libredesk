@@ -47,10 +47,7 @@ export const createFormSchema = (t) => z.object({
     .int({
       message: t('admin.general.conversationRetentionDays.valid')
     })
-    .min(0, {
-      message: t('admin.general.conversationRetentionDays.valid')
-    })
-    .max(3650, {
+    .refine((days) => days === 0 || (days >= 30 && days <= 3650), {
       message: t('admin.general.conversationRetentionDays.valid')
     })
     .optional()
@@ -64,10 +61,7 @@ export const createFormSchema = (t) => z.object({
     .int({
       message: t('admin.general.conversationRetentionTaggedDays.valid')
     })
-    .min(0, {
-      message: t('admin.general.conversationRetentionTaggedDays.valid')
-    })
-    .max(3650, {
+    .refine((days) => days === 0 || (days >= 30 && days <= 3650), {
       message: t('admin.general.conversationRetentionTaggedDays.valid')
     })
     .optional()

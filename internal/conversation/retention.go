@@ -3,6 +3,7 @@ package conversation
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/lib/pq"
@@ -21,31 +22,73 @@ type RetentionPolicy struct {
 	TaggedDays     int
 }
 
+// Equal reports whether two policies would delete the same conversations.
+func (p RetentionPolicy) Equal(o RetentionPolicy) bool {
+	return p.Days == o.Days && p.DeleteContacts == o.DeleteContacts && p.TaggedDays == o.TaggedDays && slices.Equal(p.Tags, o.Tags)
+}
+
 // RunRetention deletes resolved conversations older than the retention period once an hour.
 // The policy is read on every run as days, the contact switch, tags and tagged days, so a changed
-// setting applies without a restart.
+// setting applies without a restart. The first run with a new policy only counts and logs what it
+// would delete; deleting starts with the next run, so a mistaken value shows up before it acts.
 func (c *Manager) RunRetention(ctx context.Context, policy func() (days int, deleteContacts bool, tags []string, taggedDays int)) {
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
+	var runner retentionRunner
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
 			days, deleteContacts, tags, taggedDays := policy()
-			p := RetentionPolicy{Days: days, DeleteContacts: deleteContacts, Tags: tags, TaggedDays: taggedDays}
-			if p.Days <= 0 {
-				continue
-			}
-			conversations, contacts, err := c.DeleteExpiredConversations(ctx, p)
-			if err != nil && !errors.Is(err, context.Canceled) {
-				c.lo.Error("error deleting expired conversations", "error", err)
-			}
-			if conversations > 0 {
-				c.lo.Info("deleted expired conversations", "conversations", conversations, "contacts", contacts, "retention_days", p.Days)
-			}
+			runner.tick(ctx, c, RetentionPolicy{Days: days, DeleteContacts: deleteContacts, Tags: tags, TaggedDays: taggedDays})
 		}
 	}
+}
+
+// retentionRunner remembers the policy of the previous run, so a changed policy gets a dry run first.
+type retentionRunner struct {
+	last   RetentionPolicy
+	primed bool
+}
+
+// tick runs one retention round with the given policy: nothing when retention is off, a dry run when the
+// policy differs from the previous round, else the deletion.
+func (r *retentionRunner) tick(ctx context.Context, c *Manager, p RetentionPolicy) {
+	if p.Days <= 0 {
+		r.primed = false
+		return
+	}
+	if !r.primed || !r.last.Equal(p) {
+		r.last, r.primed = p, true
+		count, err := c.CountExpiredConversations(ctx, p)
+		if err != nil && !errors.Is(err, context.Canceled) {
+			c.lo.Error("error counting expired conversations", "error", err)
+			return
+		}
+		c.lo.Info("retention policy changed, deleting from the next run", "would_delete", count, "retention_days", p.Days, "tagged_days", p.TaggedDays, "tags", p.Tags, "delete_contacts", p.DeleteContacts)
+		return
+	}
+	conversations, contacts, err := c.DeleteExpiredConversations(ctx, p)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		c.lo.Error("error deleting expired conversations", "error", err)
+	}
+	if conversations > 0 {
+		c.lo.Info("deleted expired conversations", "conversations", conversations, "contacts", contacts, "retention_days", p.Days)
+	}
+}
+
+// CountExpiredConversations returns how many conversations the policy would delete right now.
+func (c *Manager) CountExpiredConversations(ctx context.Context, p RetentionPolicy) (int, error) {
+	tags := p.Tags
+	if tags == nil {
+		tags = []string{}
+	}
+	var count int
+	if err := c.q.CountExpiredConversations.GetContext(ctx, &count, p.Days, pq.Array(tags), p.TaggedDays); err != nil {
+		return 0, err
+	}
+	return count, nil
 }
 
 // DeleteExpiredConversations deletes resolved conversations that have had no message and no status change

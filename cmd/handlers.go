@@ -43,6 +43,7 @@ func initHandlers(g *fastglue.Fastglue, hub *ws.Hub) {
 	// Settings.
 	g.GET("/api/v1/settings/general", auth(handleGetGeneralSettings))
 	g.PUT("/api/v1/settings/general", perm(clearsHCCache(handleUpdateGeneralSettings), "general_settings:manage"))
+	g.GET("/api/v1/settings/retention/preview", perm(handleGetRetentionPreview, "general_settings:manage"))
 	g.GET("/api/v1/settings/notifications/email", perm(handleGetEmailNotificationSettings, "notification_settings:manage"))
 	g.PUT("/api/v1/settings/notifications/email", perm(handleUpdateEmailNotificationSettings, "notification_settings:manage"))
 

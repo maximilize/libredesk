@@ -165,6 +165,10 @@ unsnooze_interval = "5m"
 draft_retention_duration = "360h"
 # How often to check for offline conversations in database to send continuity emails
 continuity_scan_interval = "5m"
+# Scheduled deletion of resolved conversations after the period set in Admin -> General.
+# Off by default: while false, the retention fields are hidden in the admin and rejected by the API,
+# and nothing is ever deleted on a schedule. Turn on deliberately; deletions are final.
+retention_enabled = false
 
 [sla]
 # How often to evaluate SLA compliance for conversations

@@ -96,6 +96,7 @@
         </FormField>
       </FormGrid>
       <FormField
+        v-if="retentionEnabled"
         v-slot="{ componentField, handleChange }"
         name="conversation_retention_delete_contacts"
       >
@@ -163,64 +164,79 @@
             <FormMessage />
           </FormItem>
         </FormField>
-        <FormField
-          v-slot="{ field }"
-          name="conversation_retention_days"
-          :value="props.initialValues.conversation_retention_days"
-        >
-          <FormItem>
-            <FormLabel>
-              {{ t('admin.general.conversationRetentionDays') }}
-            </FormLabel>
-            <FormControl>
-              <Input type="number" placeholder="0" v-bind="field" />
-            </FormControl>
-            <FormDescription>
-              {{ t('admin.general.conversationRetentionDays.description') }}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField name="conversation_retention_tags" v-slot="{ componentField, handleChange }">
-          <FormItem>
-            <FormLabel>
-              {{ t('admin.general.conversationRetentionTags') }}
-            </FormLabel>
-            <FormControl>
-              <TagsInput :modelValue="componentField.modelValue" @update:modelValue="handleChange">
-                <TagsInputItem v-for="item in componentField.modelValue" :key="item" :value="item">
-                  <TagsInputItemText />
-                  <TagsInputItemDelete />
-                </TagsInputItem>
-                <TagsInputInput
-                  :placeholder="t('admin.general.conversationRetentionTags.placeholder')"
-                />
-              </TagsInput>
-            </FormControl>
-            <FormDescription>
-              {{ t('admin.general.conversationRetentionTags.description') }}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        </FormField>
-        <FormField
-          v-slot="{ field }"
-          name="conversation_retention_tagged_days"
-          :value="props.initialValues.conversation_retention_tagged_days"
-        >
-          <FormItem>
-            <FormLabel>
-              {{ t('admin.general.conversationRetentionTaggedDays') }}
-            </FormLabel>
-            <FormControl>
-              <Input type="number" placeholder="0" v-bind="field" />
-            </FormControl>
-            <FormDescription>
-              {{ t('admin.general.conversationRetentionTaggedDays.description') }}
-            </FormDescription>
-            <FormMessage />
-          </FormItem>
-        </FormField>
+        <template v-if="retentionEnabled">
+          <FormField
+            v-slot="{ field }"
+            name="conversation_retention_days"
+            :value="props.initialValues.conversation_retention_days"
+          >
+            <FormItem>
+              <FormLabel>
+                {{ t('admin.general.conversationRetentionDays') }}
+              </FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="0" v-bind="field" />
+              </FormControl>
+              <FormDescription>
+                {{ t('admin.general.conversationRetentionDays.description') }}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField name="conversation_retention_tags" v-slot="{ componentField, handleChange }">
+            <FormItem>
+              <FormLabel>
+                {{ t('admin.general.conversationRetentionTags') }}
+              </FormLabel>
+              <FormControl>
+                <TagsInput
+                  :modelValue="componentField.modelValue"
+                  @update:modelValue="handleChange"
+                >
+                  <TagsInputItem
+                    v-for="item in componentField.modelValue"
+                    :key="item"
+                    :value="item"
+                  >
+                    <TagsInputItemText />
+                    <TagsInputItemDelete />
+                  </TagsInputItem>
+                  <TagsInputInput
+                    :placeholder="t('admin.general.conversationRetentionTags.placeholder')"
+                  />
+                </TagsInput>
+              </FormControl>
+              <FormDescription>
+                {{ t('admin.general.conversationRetentionTags.description') }}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <FormField
+            v-slot="{ field }"
+            name="conversation_retention_tagged_days"
+            :value="props.initialValues.conversation_retention_tagged_days"
+          >
+            <FormItem>
+              <FormLabel>
+                {{ t('admin.general.conversationRetentionTaggedDays') }}
+              </FormLabel>
+              <FormControl>
+                <Input type="number" placeholder="0" v-bind="field" />
+              </FormControl>
+              <FormDescription>
+                {{ t('admin.general.conversationRetentionTaggedDays.description') }}
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          </FormField>
+          <p class="text-sm text-muted-foreground col-span-full">
+            {{ retentionPreviewText }}
+          </p>
+        </template>
+        <p v-else class="text-sm text-muted-foreground col-span-full">
+          {{ t('admin.general.conversationRetention.disabled') }}
+        </p>
         <FormField name="allowed_file_upload_extensions" v-slot="{ componentField, handleChange }">
           <FormItem>
             <FormLabel>
@@ -289,6 +305,9 @@ import { timeZones } from '@main/constants/timezones.js'
 import { useI18n } from 'vue-i18n'
 import SwitchField from '@shared-ui/components/SwitchField.vue'
 import api from '@main/api/index.js'
+import { useAppSettingsStore } from '@main/stores/appSettings'
+import { computed } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 
 const emitter = useEmitter()
 const { t } = useI18n()
@@ -322,6 +341,45 @@ const submitLabel = props.submitLabel || t('globals.messages.save')
 const form = useForm({
   validationSchema: toTypedSchema(createFormSchema(t))
 })
+
+// Scheduled deletion is switched on in config.toml; without it the fields are hidden and the API rejects them.
+const appSettingsStore = useAppSettingsStore()
+const retentionEnabled = computed(
+  () => appSettingsStore.public_config?.['conversation.retention_enabled'] === true
+)
+const retentionPreview = ref(null)
+const retentionPreviewText = computed(() => {
+  if (retentionPreview.value === null) return ''
+  return retentionPreview.value > 0
+    ? t('admin.general.conversationRetention.preview', { count: retentionPreview.value })
+    : t('admin.general.conversationRetention.previewNone')
+})
+const loadRetentionPreview = useDebounceFn(async () => {
+  const days = Number(form.values.conversation_retention_days) || 0
+  if (!retentionEnabled.value || days <= 0) {
+    retentionPreview.value = null
+    return
+  }
+  try {
+    const resp = await api.getRetentionPreview({
+      days,
+      tagged_days: Number(form.values.conversation_retention_tagged_days) || 0,
+      tags: (form.values.conversation_retention_tags || []).join(',')
+    })
+    retentionPreview.value = resp?.data?.data?.count ?? null
+  } catch {
+    retentionPreview.value = null
+  }
+}, 500)
+watch(
+  () => [
+    form.values.conversation_retention_days,
+    form.values.conversation_retention_tagged_days,
+    form.values.conversation_retention_tags
+  ],
+  loadRetentionPreview,
+  { deep: true }
+)
 
 onMounted(() => {
   fetchBusinessHours()

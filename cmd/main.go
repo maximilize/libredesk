@@ -378,13 +378,18 @@ func main() {
 
 	go whatsappTemplateSyncWorker(ctx, app)
 
-	// Settings reloads replace ko under app's lock, so the retention period is read under it too.
-	go conversation.RunRetention(ctx, func() (int, bool, []string, int) {
-		app.Lock()
-		defer app.Unlock()
-		return ko.Int("app.conversation_retention_days"), ko.Bool("app.conversation_retention_delete_contacts"),
-			ko.Strings("app.conversation_retention_tags"), ko.Int("app.conversation_retention_tagged_days")
-	})
+	// Scheduled deletion only runs when switched on in config.toml. Settings reloads replace ko under
+	// app's lock, so the retention period is read under it too.
+	if ko.Bool("conversation.retention_enabled") {
+		go conversation.RunRetention(ctx, func() (int, bool, []string, int) {
+			app.Lock()
+			defer app.Unlock()
+			return ko.Int("app.conversation_retention_days"), ko.Bool("app.conversation_retention_delete_contacts"),
+				ko.Strings("app.conversation_retention_tags"), ko.Int("app.conversation_retention_tagged_days")
+		})
+	} else {
+		lo.Info("conversation retention is off, set conversation.retention_enabled in the config to turn it on")
+	}
 
 	g := fastglue.NewGlue()
 	g.SetContext(app)

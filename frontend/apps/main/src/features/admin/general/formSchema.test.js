@@ -33,6 +33,8 @@ describe('General Form Schema', () => {
     test('conversation retention days', () => {
         expect(schema.parse(validForm).conversation_retention_days).toBe(0)
         expect(() => schema.parse({ ...validForm, conversation_retention_days: 0 })).not.toThrow()
+        expect(() => schema.parse({ ...validForm, conversation_retention_days: 30 })).not.toThrow()
+        expect(() => schema.parse({ ...validForm, conversation_retention_days: 7 })).toThrow()
         expect(() => schema.parse({ ...validForm, conversation_retention_days: -1 })).toThrow()
         expect(() => schema.parse({ ...validForm, conversation_retention_days: 1.5 })).toThrow()
         expect(() => schema.parse({ ...validForm, conversation_retention_days: 3651 })).toThrow()
@@ -44,6 +46,7 @@ describe('General Form Schema', () => {
         expect(parsed.conversation_retention_tagged_days).toBe(0)
         expect(() => schema.parse({ ...validForm, conversation_retention_tags: ['payment'], conversation_retention_tagged_days: 3650 })).not.toThrow()
         expect(() => schema.parse({ ...validForm, conversation_retention_tagged_days: -1 })).toThrow()
+        expect(() => schema.parse({ ...validForm, conversation_retention_tagged_days: 10 })).toThrow()
         expect(() => schema.parse({ ...validForm, conversation_retention_tagged_days: 3651 })).toThrow()
     })
 
