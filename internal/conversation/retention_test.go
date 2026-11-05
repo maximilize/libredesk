@@ -2,6 +2,7 @@ package conversation
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/abhinavxd/libredesk/internal/dbutil"
@@ -33,7 +34,7 @@ func TestDeleteExpiredConversations(t *testing.T) {
 			contactID, inboxID, status, createdAgo, lastMessageAgo, lastResolvedAgo); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.Exec(`INSERT INTO conversation_messages (type, status, conversation_id, sender_id, sender_type, content, created_at) VALUES ('incoming', 'received', $1, $2, 'contact', 'Hello', NOW() - $3::interval)`, id, contactID, lastMessageAgo); err != nil {
+		if _, err := db.Exec(`INSERT INTO conversation_messages (type, status, conversation_id, sender_id, sender_type, content, created_at, source_id) VALUES ('incoming', 'received', $1, $2, 'contact', 'Hello', NOW() - $3::interval, $4)`, id, contactID, lastMessageAgo, fmt.Sprintf("<%d@example.com>", id)); err != nil {
 			t.Fatal(err)
 		}
 		return id
@@ -125,6 +126,14 @@ func TestDeleteExpiredConversations(t *testing.T) {
 		if exists != want {
 			t.Errorf("conversation %d exists = %v, want %v", id, exists, want)
 		}
+	}
+	// The deleted messages leave their Message-IDs behind, so the IMAP scan won't import the mails again.
+	var tombstones int
+	if err := db.Get(&tombstones, `SELECT COUNT(*) FROM deleted_message_source_ids`); err != nil {
+		t.Fatal(err)
+	}
+	if tombstones == 0 {
+		t.Fatal("no tombstones left for deleted messages")
 	}
 	var messages int
 	if err := db.Get(&messages, `SELECT COUNT(*) FROM conversation_messages WHERE conversation_id IN ($1, $2)`, expiredClosed, expiredResolved); err != nil {

@@ -644,11 +644,26 @@ SELECT id FROM conversations WHERE id = ANY($1::BIGINT[]) FOR UPDATE;
 
 -- name: delete-expired-conversations
 -- Deletes the given conversations, except those with a message younger than $2 days: a message is committed
--- before last_message_at moves, so such a conversation waits for the next run.
+-- before last_message_at moves, so such a conversation waits for the next run. The Message-IDs of the deleted
+-- messages are remembered, so the IMAP scan doesn't import the mails again.
 -- Messages, drafts and the rest cascade; attachments go with the unlinked-media sweep.
+WITH doomed AS (
+    SELECT c.id
+    FROM conversations c
+    WHERE c.id = ANY($1::BIGINT[])
+      AND NOT EXISTS (SELECT 1 FROM conversation_messages m WHERE m.conversation_id = c.id AND m.created_at >= NOW() - make_interval(days => $2))
+),
+tombstones AS (
+    INSERT INTO deleted_message_source_ids (source_id)
+    SELECT m.source_id
+    FROM conversation_messages m
+    JOIN doomed d ON d.id = m.conversation_id
+    WHERE COALESCE(m.source_id, '') <> ''
+    ON CONFLICT (source_id) DO UPDATE SET deleted_at = NOW()
+)
 DELETE FROM conversations c
-WHERE c.id = ANY($1::BIGINT[])
-  AND NOT EXISTS (SELECT 1 FROM conversation_messages m WHERE m.conversation_id = c.id AND m.created_at >= NOW() - make_interval(days => $2))
+USING doomed d
+WHERE c.id = d.id
 RETURNING c.contact_id;
 
 -- name: lock-contacts
